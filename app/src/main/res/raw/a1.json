@@ -1,0 +1,21 @@
+{
+  "id": "1",
+  "type": "story",
+  "items": [
+    {
+      "type": "image",
+      "image": "https://w.forfun.com/fetch/09/094a99ab8e9132aa763c330917216aeb.jpeg",
+      "title": "1 - 1"
+    },
+    {
+      "type": "image",
+      "image": "https://i.artfile.me/wallpaper/25-08-2015/2880x1800/priroda-voshody-zakaty-trava-zakat-nebo--963147.jpg",
+      "title": "1 - 2"
+    },
+    {
+      "type": "image",
+      "image": "https://i.yapx.cc/Q9kdQ.jpg",
+      "title": "1 - 3"
+    }
+  ]
+}

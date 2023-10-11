@@ -6,12 +6,12 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerScope
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,6 +27,8 @@ import kotlinx.coroutines.launch
 
 
 // https://www.composables.com/components/foundation/horizontalpager
+// TODO: position - [1...], index - [0...]
+// TODO: derivedStateOf
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StoriesScreen(
@@ -45,21 +47,31 @@ fun StoriesScreen(
     onNextPageTime: (position: Int) -> Unit,
     onPageScreenShow: (pagePosition: Int, screenPosition: Int) -> Unit,
     onError: (position: Int, e: Throwable) -> Unit,
-    pageContent: @Composable PagerScope.(page: Int) -> Unit
+    storyScreenContent: @Composable (StoryPage.Custom) -> Unit,
+    pageContent: @Composable (position: Int) -> Unit
 ) {
     val pagerState =
         rememberPagerState(initialPage = initialPage, pageCount = { contentStates.size })
     val scope = rememberCoroutineScope()
 
+    LaunchedEffect(pagerState) {
+        // Collect from the pager state a snapshotFlow reading the currentPage
+        snapshotFlow { pagerState.currentPage }.collect { page ->
+            onPageChanged.invoke(pagerState.currentPage, page)
+        }
+    }
+
     LaunchedEffect(key1 = initialPage, block = {
         onInitStories.invoke(initialPage)
     })
+
+
 
     Box(modifier = Modifier.fillMaxSize()) {
         HorizontalPager(
             state = pagerState, modifier = Modifier.fillMaxSize()
         ) { currentPosition ->
-            onPageChanged.invoke(pagerState.currentPage, currentPosition)
+            // onPageChanged.invoke(pagerState.currentPage, currentPosition)
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -91,7 +103,9 @@ fun StoriesScreen(
                             scope.launch { pagerState.animateScrollToPage(newPosition + 1) }
                             onNextPageTime.invoke(newPosition + 1)
                         },
-                        onPageScreenShow = onPageScreenShow
+                        onPageScreenShow = onPageScreenShow,
+                        storyScreenContent = storyScreenContent,
+                        pageContent = pageContent
                     )
 
                     is PageState.Error -> {
@@ -118,11 +132,15 @@ fun SuccessState(
     onNextPageSwipe: (position: Int) -> Unit,
     onPreviousPageSwipe: (position: Int) -> Unit,
     onNextPageTime: (position: Int) -> Unit,
-    onPageScreenShow: (pagePosition: Int, screenPosition: Int) -> Unit
+    onPageScreenShow: (pagePosition: Int, screenPosition: Int) -> Unit,
+    storyScreenContent: @Composable (StoryPage.Custom) -> Unit,
+    pageContent: @Composable (position: Int) -> Unit
 ) {
+    // TODO: to api
     when (contentPage) {
         is StoryPage -> {
-            StoryScreen(positionPage = positionPage,
+            StoryScreen(
+                positionPage = positionPage,
                 isActive = isActive,
                 story = contentPage,
                 onNextScreenTap = onNextScreenTap,
@@ -130,13 +148,19 @@ fun SuccessState(
                 onNextScreenTime = onNextScreenTime,
                 onNextPageTap = { onNextPageTap.invoke(positionPage) },
                 onPreviousPageTap = { onPreviousPageTap.invoke(positionPage) },
-                onNextPageTime = { onNextPageTime.invoke(positionPage) })
+                onNextPageTime = { onNextPageTime.invoke(positionPage) },
+                screenContent = storyScreenContent
+            )
         }
 
         is VideoPage -> {
             VideoScreen(
                 videoPage = contentPage, isActive = isActive
             )
+        }
+
+        else -> {
+            pageContent.invoke(positionPage)
         }
     }
 }

@@ -8,7 +8,3 @@ import com.example.componentsui.stories.page.StoryPage
 fun CustomStoriesContent(title: String, number: Int) {
     Text(text = "$title - $number")
 }
-
-class Test1 : StoryPage.Custom() {
-
-}

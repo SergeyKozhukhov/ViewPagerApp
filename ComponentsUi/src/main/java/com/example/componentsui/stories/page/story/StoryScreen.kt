@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -38,7 +39,8 @@ fun StoryScreen(
     viewModel: StoryViewModel = androidx.lifecycle.viewmodel.compose.viewModel<StoryViewModel>(
         key = positionPage.toString(),
         factory = StoryViewModel.provide(story.screens.size)
-    ).also { LocalLifecycleOwner.current.lifecycle.addObserver(it) }
+    ).also { LocalLifecycleOwner.current.lifecycle.addObserver(it) },
+    screenContent: @Composable (StoryPage.Custom) -> Unit
 ) {
     val screenState by viewModel.screenState
 
@@ -78,7 +80,8 @@ fun StoryScreen(
         story = story,
         onNextScreenTap = { viewModel.onNextTap() },
         onPreviousScreenTap = { viewModel.onPreviousTap() },
-        onPauseLongPress = { viewModel.onPause() }
+        onPauseLongPress = { viewModel.onPause() },
+        screenContent = screenContent
     )
 
     LaunchedEffect(key1 = isActive, key2 = positionPage, key3 = screenState.screenIndex) {
@@ -95,7 +98,8 @@ fun CurrentScreen(
     story: StoryPage,
     onNextScreenTap: () -> Unit,
     onPreviousScreenTap: () -> Unit,
-    onPauseLongPress: () -> Unit
+    onPauseLongPress: () -> Unit,
+    screenContent: @Composable (StoryPage.Custom) -> Unit
 ) {
     Box(
         modifier = Modifier.pointerInput(Unit) {
@@ -120,6 +124,23 @@ fun CurrentScreen(
                 })
         },
     ) {
+        when (val screen = story.screens[currentSlice]) {
+            is StoryPage.Image -> {
+                StoryImageContent(
+                    image = screen.image,
+                    title = screen.title,
+                )
+            }
+
+            is StoryPage.Video -> {
+                StoryVideoContent(video = screen.video, title = screen.title)
+            }
+
+            is StoryPage.Custom -> {
+                screenContent.invoke(screen)
+            }
+        }
+
         Row(
             modifier = Modifier,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -134,23 +155,6 @@ fun CurrentScreen(
                     .padding(top = 12.dp, bottom = 12.dp)
                     .clip(RoundedCornerShape(12.dp))
             )
-        }
-
-        when (val screen = story.screens[currentSlice]) {
-            is StoryPage.Image -> {
-                StoryImageContent(
-                    image = screen.image,
-                    title = screen.title,
-                )
-            }
-
-            is StoryPage.Video -> {
-                StoryVideoContent(video = screen.video, title = screen.title)
-            }
-
-            is StoryPage.Custom -> {
-
-            }
         }
     }
 }

@@ -20,12 +20,14 @@ data class StoryPage(
         val title: String
     ) : Screen
 
-    abstract class Custom : Screen
+    interface Custom : Screen
 }
 
 data class VideoPage(
     val video: Uri,
     val title: String
 ) : ContentPage
+
+interface CustomPage : ContentPage
 
 //         val content: @Composable BoxScope.() -> Unit

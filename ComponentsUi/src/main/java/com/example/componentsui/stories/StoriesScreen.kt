@@ -1,5 +1,6 @@
 package com.example.componentsui.stories
 
+import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -45,8 +46,11 @@ fun StoriesScreen(
     onPreviousPageSwipe: (position: Int) -> Unit,
     onPageScreenShow: (pagePosition: Int, screenPosition: Int) -> Unit,
     onError: (position: Int, e: Throwable) -> Unit,
+    idleContent: @Composable () -> Unit = { Text("Idle") },
+    loadingContent: @Composable () -> Unit = { Text("Loading") },
     storyScreenContent: @Composable (StoryPage.Custom) -> Unit,
-    pageContent: @Composable (position: Int) -> Unit
+    pageContent: @Composable (position: Int) -> Unit,
+    errorContent: @Composable (e: Throwable) -> Unit = { Text("Error") }
 ) {
     val pagerState =
         rememberPagerState(initialPage = initialPage, pageCount = { contentStates.size })
@@ -69,6 +73,7 @@ fun StoriesScreen(
             modifier = Modifier.fillMaxSize(),
             beyondBoundsPageCount = 1
         ) { currentPosition ->
+            Log.d("ContentViewModel", "preload position: $currentPosition")
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -77,8 +82,8 @@ fun StoriesScreen(
                     .border(width = Dp(4f), color = Color.Black)
             ) {
                 when (val currentState = contentStates[currentPosition]) {
-                    is PageState.Idle -> Text("Idle")
-                    is PageState.Loading -> Text("Loading")
+                    is PageState.Idle -> idleContent.invoke()
+                    is PageState.Loading -> loadingContent.invoke()
                     is PageState.Success -> SuccessState(
                         contentPage = currentState.content,
                         positionPage = currentPosition,
@@ -103,7 +108,7 @@ fun StoriesScreen(
 
                     is PageState.Error -> {
                         onError.invoke(currentPosition, currentState.e)
-                        Text("Error")
+                        errorContent.invoke(currentState.e)
                     }
                 }
                 CloseButton(onClick = { onCloseClick.invoke(currentPosition) })

@@ -32,7 +32,7 @@ class ContentViewModel(
     val uiState = mutableStateOf<ContentUiState>(ContentUiState.IDLE)
     val itemStates: SnapshotStateList<PageState> = ids.map { PageState.Idle }.toMutableStateList()
 
-    fun onPageChanged(previousPosition: Int, nextPosition: Int) {
+    fun onPageChanged(nextPosition: Int) {
         Log.d(TAG, "onPageChanged: $nextPosition")
         uiState.value = ContentUiState.Process
         viewModelScope.launch {

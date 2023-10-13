@@ -2,31 +2,24 @@ package com.example.componentsui.stories.page.story
 
 import android.util.Log
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.componentsui.stories.elements.LinearIndicator
+import com.example.componentsui.stories.elements.ProgressBar
 import com.example.componentsui.stories.page.StoryPage
 import com.example.componentsui.stories.page.story.image.StoryImageContent
 import com.example.componentsui.stories.page.story.video.StoryVideoContent
 
 private const val TAG = "StoriesScreen"
 
+// https://www.droidcon.com/2022/10/12/how-to-handle-viewmodel-one-time-events-in-jetpack-compose/
 @Composable // TODO: rename to StoryPage
 fun StoryScreen(
     id: Int,
@@ -103,8 +96,8 @@ fun CurrentScreen(
         )
         ProgressBar(
             progress = progress,
-            currentPage = currentSlice,
-            numberOfPage = story.screens.size
+            currentScreen = currentSlice,
+            screenCount = story.screens.size
         )
     }
 }
@@ -158,46 +151,5 @@ private fun ContentItem(
         is StoryPage.Custom -> {
             screenContent.invoke(screen)
         }
-    }
-}
-
-@Composable
-private fun ProgressBar(
-    progress: Float, // [0, 1]
-    currentPage: Int,
-    numberOfPage: Int
-) {
-    Row(
-        modifier = Modifier,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Spacer(modifier = Modifier.padding(4.dp))
-
-        ProgressSlices(
-            progress = progress,
-            currentPage = currentPage,
-            numberOfPage = numberOfPage,
-            modifier = Modifier
-                .padding(top = 12.dp, bottom = 12.dp)
-                .clip(RoundedCornerShape(12.dp))
-        )
-    }
-}
-
-@Composable
-private fun RowScope.ProgressSlices(
-    progress: Float,
-    currentPage: Int,
-    numberOfPage: Int,
-    modifier: Modifier,
-) {
-    repeat(numberOfPage) { index ->
-        LinearIndicator(
-            progress = progress,
-            modifier = modifier.weight(1f),
-            isActive = index == currentPage
-        )
-
-        Spacer(modifier = Modifier.padding(4.dp))
     }
 }

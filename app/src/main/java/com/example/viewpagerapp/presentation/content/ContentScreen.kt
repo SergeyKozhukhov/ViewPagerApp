@@ -60,14 +60,10 @@ fun CBroStoriesScreen(
         onInitStories = { position -> viewModel.onInitStories(position) },
         onPageChanged = { previous, next -> viewModel.onPageChanged(previous, next) },
         onCloseClick = { position -> viewModel.onCloseClick(position) },
-        onNextScreenTap = { page, screen -> viewModel.onNextScreenTap(page, screen) },
-        onPreviousScreenTap = { page, screen -> viewModel.onPreviousScreenTap(page, screen) },
-        onNextScreenTime = { page, screen -> viewModel.onNextScreenTime(page, screen) },
-        onNextPageTap = { position -> viewModel.onNextPageTap(position) },
-        onPreviousPageTap = { position -> viewModel.onPreviousPageTap(position) },
+        onScreenEvent = { event, page, screen -> viewModel.onScreenEvent(event, page, screen) },
+        onBorderEvent = { event, page -> viewModel.onBorderEvent(event, page) },
         onNextPageSwipe = { position -> viewModel.onNextPageSwipe(position) },
         onPreviousPageSwipe = { position -> viewModel.onPreviousPageSwipe(position) },
-        onNextPageTime = { position -> viewModel.onNextPageTime(position) },
         onPageScreenShow = { pagePosition, screenPosition ->
             viewModel.onPageScreenShow(pagePosition, screenPosition)
         },
@@ -83,6 +79,7 @@ fun CBroStoriesScreen(
                             StoryImageContent(
                                 image = page.item.image,
                                 title = page.item.title,
+                                onPrepared = { }
                             )
                         }
                     }

@@ -13,6 +13,8 @@ import com.example.viewpagerapp.data.Repository
 import com.example.viewpagerapp.data.converters.ContentConverter
 import com.example.viewpagerapp.data.converters.EntryPointConverter
 import com.example.componentsui.stories.page.PageState
+import com.example.componentsui.stories.page.story.StoryScreenBorderEvent
+import com.example.componentsui.stories.page.story.StoryScreenEvent
 import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -59,24 +61,22 @@ class ContentViewModel(
         uiState.value = ContentUiState.Finish
     }
 
-    fun onNextScreenTap(page: Int, screen: Int) {
-        Log.d(TAG, "onNextScreenTap: $page $screen")
+    fun onScreenEvent(event: StoryScreenEvent, page: Int, screen: Int) {
+        when (event) {
+            StoryScreenEvent.IDLE -> {}
+            StoryScreenEvent.NEXT_SCREEN_TAP -> Log.d(TAG, "onNextScreenTap: $page $screen")
+            StoryScreenEvent.PREVIOUS_SCREEN_TAP -> Log.d(TAG, "onPreviousScreenTap: $page $screen")
+            StoryScreenEvent.NEXT_SCREEN_TIME -> Log.d(TAG, "onNextScreenTime: $page $screen")
+        }
     }
 
-    fun onPreviousScreenTap(page: Int, screen: Int) {
-        Log.d(TAG, "onPreviousScreenTap: $page $screen")
-    }
-
-    fun onNextScreenTime(page: Int, screen: Int) {
-        Log.d(TAG, "onNextScreenTime: $page $screen")
-    }
-
-    fun onNextPageTap(position: Int) {
-        Log.d(TAG, "onNextPageTap: $position")
-    }
-
-    fun onPreviousPageTap(position: Int) {
-        Log.d(TAG, "onPreviousPageTap: $position")
+    fun onBorderEvent(event: StoryScreenBorderEvent, page: Int) {
+        when (event) {
+            StoryScreenBorderEvent.IDLE -> {}
+            StoryScreenBorderEvent.NEXT_SCREEN_TAP -> Log.d(TAG, "onNextPageTap: $page")
+            StoryScreenBorderEvent.PREVIOUS_SCREEN_TAP -> Log.d(TAG, "onPreviousPageTap: $page")
+            StoryScreenBorderEvent.NEXT_SCREEN_TIME -> Log.d(TAG, "onNextPageTime: $page")
+        }
     }
 
     fun onNextPageSwipe(position: Int) {
@@ -85,10 +85,6 @@ class ContentViewModel(
 
     fun onPreviousPageSwipe(position: Int) {
         Log.d(TAG, "onPreviousPageSwipe: $position")
-    }
-
-    fun onNextPageTime(position: Int) {
-        Log.d(TAG, "onNextPageTime: $position")
     }
 
     fun onPageScreenShow(pagePosition: Int, screenPosition: Int) {

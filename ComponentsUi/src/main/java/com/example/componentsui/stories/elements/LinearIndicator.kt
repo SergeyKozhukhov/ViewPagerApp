@@ -23,6 +23,5 @@ fun LinearIndicator(
             .padding(top = 12.dp, bottom = 12.dp)
             .clip(RoundedCornerShape(12.dp)),
         progress = if (isActive) progress else 0f
-        // progress = if (isActive) 1f else 0f
     )
 }

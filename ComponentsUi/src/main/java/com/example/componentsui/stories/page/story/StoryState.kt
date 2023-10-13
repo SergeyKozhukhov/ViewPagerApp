@@ -1,12 +1,9 @@
 package com.example.componentsui.stories.page.story
 
 data class StoryState(
-    val screenIndex: Int = 0,
-    val progress: Float = 0f, // [0, 1]
-    val isNextScreenTap: Boolean = false,
-    val isPreviousScreenTap: Boolean = false,
-    val isNextScreenTime: Boolean = false,
-    val isNextPageTap: Boolean = false,
-    val isPreviousPageTap: Boolean = false,
-    val isNextPageTime: Boolean = false,
+    val currentScreenIndex: Int = 0,
+    val previousScreenIndex: Int = -1,
+    val screenProgress: Float = 0f, // [0, 1]
+    val event: StoryScreenEvent = StoryScreenEvent.IDLE,
+    val borderEvent: StoryScreenBorderEvent = StoryScreenBorderEvent.IDLE,
 )

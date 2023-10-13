@@ -1,5 +1,6 @@
 package com.example.componentsui.stories.page.story
 
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -11,16 +12,18 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class StoryViewModel(
-    private val screenCount: Int
+    private val screenCount: Int,
+    private val screenDuration: Int // s
 ) : ViewModel(), DefaultLifecycleObserver {
 
-    var delta = DEFAULT_DELTA
+    private val delayInMillis = ((screenDuration * 1000) / 100).toLong() // ms
 
-    val screenState = mutableStateOf(StoryState())
+    val uiState: State<StoryState> get() = _uiState
+    private val _uiState = mutableStateOf(StoryState())
 
     private var progress = 0.00f
 
-    fun startTimer() {
+    fun startProgress() {
         viewModelScope.coroutineContext.cancelChildren()
         launchTimer(0f)
     }
@@ -29,10 +32,13 @@ class StoryViewModel(
         viewModelScope.launch {
             progress = startPosition
             while (progress < 1f) {
-                progress += delta
-                screenState.value =
-                    StoryState(screenIndex = screenState.value.screenIndex, progress = progress)
-                delay(delayInMillis.toLong())
+                progress += DEFAULT_DELTA
+                _uiState.value =
+                    StoryState(
+                        currentScreenIndex = uiState.value.currentScreenIndex,
+                        screenProgress = progress
+                    )
+                delay(delayInMillis)
             }
 
             onNextTime()
@@ -42,30 +48,69 @@ class StoryViewModel(
     private fun onNextTime() {
         progress = 0f
 
-        screenState.value = if (screenState.value.screenIndex < screenCount - 1) {
+        _uiState.value = if (uiState.value.currentScreenIndex < screenCount - 1) {
             StoryState(
-                screenIndex = screenState.value.screenIndex + 1,
-                progress = 0f,
-                isNextScreenTime = true
+                currentScreenIndex = uiState.value.currentScreenIndex + 1,
+                screenProgress = 0f,
+                event = StoryScreenEvent.NEXT_SCREEN_TIME,
             )
         } else {
-            screenState.value.copy(isNextPageTime = true)
+            uiState.value.copy(borderEvent = StoryScreenBorderEvent.NEXT_SCREEN_TIME)
         }
     }
 
     fun onNextTap() {
         progress = 0f
 
-        screenState.value = if (screenState.value.screenIndex < screenCount - 1) {
+        _uiState.value = if (uiState.value.currentScreenIndex < screenCount - 1) {
             StoryState(
-                screenIndex = screenState.value.screenIndex + 1,
-                progress = 0f,
-                isNextScreenTap = true
+                currentScreenIndex = uiState.value.currentScreenIndex + 1,
+                screenProgress = 0f,
+                event = StoryScreenEvent.NEXT_SCREEN_TAP,
             )
         } else {
-            screenState.value.copy(isNextPageTap = true)
+            uiState.value.copy(borderEvent = StoryScreenBorderEvent.NEXT_SCREEN_TAP)
         }
     }
+
+    fun onPreviousTap() {
+        progress = 0f
+
+        _uiState.value = if (uiState.value.currentScreenIndex > 0) {
+            StoryState(
+                currentScreenIndex = uiState.value.currentScreenIndex - 1,
+                event = StoryScreenEvent.PREVIOUS_SCREEN_TAP,
+            )
+        } else {
+            StoryState(
+                screenProgress = 0f,
+                borderEvent = StoryScreenBorderEvent.PREVIOUS_SCREEN_TAP
+            )
+        }
+    }
+
+    fun onPause() {
+        viewModelScope.coroutineContext.cancelChildren()
+    }
+
+    fun resetPage() {
+        progress = 0f
+        _uiState.value =
+            uiState.value.copy(
+                event = StoryScreenEvent.IDLE,
+                borderEvent = StoryScreenBorderEvent.IDLE,
+            )
+    }
+
+    fun onUpdateScreen() {
+        progress = 0f
+        _uiState.value =
+            uiState.value.copy(
+                screenProgress = 0f,
+                event = StoryScreenEvent.IDLE,
+            )
+    }
+
 
     override fun onPause(owner: LifecycleOwner) {
         super.onPause(owner)
@@ -77,55 +122,14 @@ class StoryViewModel(
         launchTimer(progress)
     }
 
-    fun onPreviousTap() {
-        progress = 0f
-
-        screenState.value = if (screenState.value.screenIndex > 0) {
-            StoryState(screenIndex = screenState.value.screenIndex - 1, isPreviousScreenTap = true)
-        } else {
-            StoryState(progress = 0f, isPreviousPageTap = true)
-        }
-    }
-
-    fun onPause() {
-        viewModelScope.coroutineContext.cancelChildren()
-    }
-
-    fun resetPage() {
-        progress = 0f
-        screenState.value =
-            screenState.value.copy(
-                isNextScreenTap = false,
-                isPreviousScreenTap = false,
-                isNextScreenTime = false,
-                isNextPageTap = false,
-                isPreviousPageTap = false,
-                isNextPageTime = false
-            )
-    }
-
-    fun resetScreen() {
-        progress = 0f
-        screenState.value =
-            screenState.value.copy(
-                progress = 0f,
-                isNextScreenTap = false,
-                isPreviousScreenTap = false,
-                isNextScreenTime = false,
-            )
-    }
-
     companion object {
-        private const val SLIDE_DURATION = 5 // s
-        const val delayInMillis = (SLIDE_DURATION * 1000) / 100 // ms
-
         const val DEFAULT_DELTA = 0.01f
 
 
         @Suppress("UNCHECKED_CAST")
-        fun provide(count: Int) = object : ViewModelProvider.Factory {
+        fun provide(screenCount: Int, screenDuration: Int) = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return StoryViewModel(count) as T
+                return StoryViewModel(screenCount, screenDuration) as T
             }
         }
     }

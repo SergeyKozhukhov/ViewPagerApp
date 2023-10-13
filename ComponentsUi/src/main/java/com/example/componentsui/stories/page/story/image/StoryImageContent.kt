@@ -21,6 +21,7 @@ import com.example.componentsui.R
 fun StoryImageContent(
     image: String,
     title: String,
+    onPrepared: () -> Unit, // loaded
 ) {
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -36,7 +37,9 @@ fun StoryImageContent(
                 .build(),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.Crop,
+            onSuccess = { onPrepared.invoke() },
+            onError = { onPrepared.invoke() }
         )
         Text(
             text = title,

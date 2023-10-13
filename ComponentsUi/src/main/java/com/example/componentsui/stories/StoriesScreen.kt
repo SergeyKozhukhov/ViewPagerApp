@@ -22,6 +22,8 @@ import com.example.componentsui.stories.page.PageState
 import com.example.componentsui.stories.page.StoryPage
 import com.example.componentsui.stories.page.VideoPage
 import com.example.componentsui.stories.page.story.StoryScreen
+import com.example.componentsui.stories.page.story.StoryScreenBorderEvent
+import com.example.componentsui.stories.page.story.StoryScreenEvent
 import com.example.componentsui.stories.page.video.VideoScreen
 import kotlinx.coroutines.launch
 
@@ -37,14 +39,10 @@ fun StoriesScreen(
     onInitStories: (position: Int) -> Unit,
     onPageChanged: (previousPosition: Int, nextPosition: Int) -> Unit,
     onCloseClick: (position: Int) -> Unit,
-    onNextScreenTap: (page: Int, screen: Int) -> Unit,
-    onPreviousScreenTap: (page: Int, screen: Int) -> Unit,
-    onNextScreenTime: (page: Int, screen: Int) -> Unit,
-    onNextPageTap: (position: Int) -> Unit,
-    onPreviousPageTap: (position: Int) -> Unit,
+    onScreenEvent: (event: StoryScreenEvent, page: Int, screen: Int) -> Unit,
+    onBorderEvent: (event: StoryScreenBorderEvent, page: Int) -> Unit,
     onNextPageSwipe: (position: Int) -> Unit,
     onPreviousPageSwipe: (position: Int) -> Unit,
-    onNextPageTime: (position: Int) -> Unit,
     onPageScreenShow: (pagePosition: Int, screenPosition: Int) -> Unit,
     onError: (position: Int, e: Throwable) -> Unit,
     storyScreenContent: @Composable (StoryPage.Custom) -> Unit,
@@ -65,8 +63,6 @@ fun StoriesScreen(
         onInitStories.invoke(initialPage)
     })
 
-
-
     Box(modifier = Modifier.fillMaxSize()) {
         HorizontalPager(
             state = pagerState, modifier = Modifier.fillMaxSize()
@@ -86,23 +82,19 @@ fun StoriesScreen(
                         contentPage = currentState.content,
                         positionPage = currentPosition,
                         isActive = currentPosition == pagerState.settledPage,
-                        onNextScreenTap = onNextScreenTap,
-                        onPreviousScreenTap = onPreviousScreenTap,
-                        onNextScreenTime = onNextScreenTime,
-                        onNextPageTap = { newPosition ->
-                            scope.launch { pagerState.animateScrollToPage(newPosition + 1) }
-                            onNextPageTap.invoke(newPosition + 1)
-                        },
-                        onPreviousPageTap = { newPosition ->
-                            scope.launch { pagerState.animateScrollToPage(newPosition - 1) }
-                            onPreviousPageTap.invoke(newPosition + 1)
+                        onScreenEvent = onScreenEvent,
+                        onBorderEvent = { event, page ->
+                            onBorderEvent.invoke(event, page)
+                            if (event == StoryScreenBorderEvent.NEXT_SCREEN_TAP || event == StoryScreenBorderEvent.NEXT_SCREEN_TIME) {
+                                scope.launch { pagerState.animateScrollToPage(page + 1) }
+                            }
+
+                            if (event == StoryScreenBorderEvent.PREVIOUS_SCREEN_TAP) {
+                                scope.launch { pagerState.animateScrollToPage(page - 1) }
+                            }
                         },
                         onNextPageSwipe = onNextPageSwipe,
                         onPreviousPageSwipe = onPreviousPageSwipe,
-                        onNextPageTime = { newPosition ->
-                            scope.launch { pagerState.animateScrollToPage(newPosition + 1) }
-                            onNextPageTime.invoke(newPosition + 1)
-                        },
                         onPageScreenShow = onPageScreenShow,
                         storyScreenContent = storyScreenContent,
                         pageContent = pageContent
@@ -124,14 +116,10 @@ fun SuccessState(
     contentPage: ContentPage,
     positionPage: Int,
     isActive: Boolean,
-    onNextScreenTap: (page: Int, screen: Int) -> Unit,
-    onPreviousScreenTap: (page: Int, screen: Int) -> Unit,
-    onNextScreenTime: (page: Int, screen: Int) -> Unit,
-    onNextPageTap: (position: Int) -> Unit,
-    onPreviousPageTap: (position: Int) -> Unit,
+    onScreenEvent: (event: StoryScreenEvent, page: Int, screen: Int) -> Unit,
+    onBorderEvent: (event: StoryScreenBorderEvent, page: Int) -> Unit,
     onNextPageSwipe: (position: Int) -> Unit,
     onPreviousPageSwipe: (position: Int) -> Unit,
-    onNextPageTime: (position: Int) -> Unit,
     onPageScreenShow: (pagePosition: Int, screenPosition: Int) -> Unit,
     storyScreenContent: @Composable (StoryPage.Custom) -> Unit,
     pageContent: @Composable (position: Int) -> Unit
@@ -140,15 +128,13 @@ fun SuccessState(
     when (contentPage) {
         is StoryPage -> {
             StoryScreen(
-                positionPage = positionPage,
+                id = positionPage,
                 isActive = isActive,
                 story = contentPage,
-                onNextScreenTap = onNextScreenTap,
-                onPreviousScreenTap = onPreviousScreenTap,
-                onNextScreenTime = onNextScreenTime,
-                onNextPageTap = { onNextPageTap.invoke(positionPage) },
-                onPreviousPageTap = { onPreviousPageTap.invoke(positionPage) },
-                onNextPageTime = { onNextPageTime.invoke(positionPage) },
+                onScreenEvent = { event, screen ->
+                    onScreenEvent.invoke(event, positionPage, screen)
+                },
+                onBorderEvent = { event -> onBorderEvent.invoke(event, positionPage) },
                 screenContent = storyScreenContent
             )
         }

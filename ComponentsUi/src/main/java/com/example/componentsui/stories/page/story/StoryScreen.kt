@@ -4,13 +4,13 @@ import android.util.Log
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -18,75 +18,62 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.componentsui.stories.elements.LinearIndicator
 import com.example.componentsui.stories.page.StoryPage
 import com.example.componentsui.stories.page.story.image.StoryImageContent
 import com.example.componentsui.stories.page.story.video.StoryVideoContent
-import com.example.componentsui.stories.elements.LinearIndicator
 
 private const val TAG = "StoriesScreen"
 
 @Composable // TODO: rename to StoryPage
 fun StoryScreen(
-    positionPage: Int,
+    id: Int,
     isActive: Boolean,
     story: StoryPage,
-    onNextScreenTap: (page: Int, screen: Int) -> Unit,
-    onPreviousScreenTap: (page: Int, screen: Int) -> Unit,
-    onNextScreenTime: (page: Int, screen: Int) -> Unit,
-    onNextPageTap: () -> Unit,
-    onPreviousPageTap: () -> Unit,
-    onNextPageTime: () -> Unit,
-    viewModel: StoryViewModel = androidx.lifecycle.viewmodel.compose.viewModel<StoryViewModel>(
-        key = positionPage.toString(),
-        factory = StoryViewModel.provide(story.screens.size)
-    ).also { LocalLifecycleOwner.current.lifecycle.addObserver(it) },
+    onScreenEvent: (event: StoryScreenEvent, screen: Int) -> Unit,
+    onBorderEvent: (event: StoryScreenBorderEvent) -> Unit,
+    viewModel: StoryViewModel = viewModel(
+        key = "StoryScreen: $id",
+        factory = StoryViewModel.provide(screenCount = story.screens.size, screenDuration = 5)
+    ),
+    lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     screenContent: @Composable (StoryPage.Custom) -> Unit
 ) {
-    val screenState by viewModel.screenState
-
-    if (screenState.isNextScreenTap) {
-        viewModel.resetScreen()
-        onNextScreenTap.invoke(positionPage, screenState.screenIndex)
+    DisposableEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.addObserver(viewModel)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(viewModel)
+        }
     }
 
-    if (screenState.isPreviousScreenTap) {
-        viewModel.resetScreen()
-        onPreviousScreenTap.invoke(positionPage, screenState.screenIndex)
+    val screenState by viewModel.uiState
+
+    if (screenState.event != StoryScreenEvent.IDLE) {
+        onScreenEvent.invoke(screenState.event, screenState.currentScreenIndex)
+        viewModel.onUpdateScreen()
     }
 
-    if (screenState.isNextScreenTime) {
-        viewModel.resetScreen()
-        onNextScreenTime.invoke(positionPage, screenState.screenIndex)
-    }
-
-    if (screenState.isNextPageTime) {
+    if (screenState.borderEvent != StoryScreenBorderEvent.IDLE) {
+        onBorderEvent.invoke(screenState.borderEvent)
         viewModel.resetPage()
-        onNextPageTime.invoke()
-    }
-
-    if (screenState.isNextPageTap) {
-        viewModel.resetPage()
-        onNextPageTap.invoke()
-    }
-
-    if (screenState.isPreviousPageTap) {
-        viewModel.resetPage()
-        onPreviousPageTap.invoke()
     }
 
     CurrentScreen(
-        progress = screenState.progress,
-        currentSlice = screenState.screenIndex,
+        progress = screenState.screenProgress,
+        currentSlice = screenState.currentScreenIndex,
         story = story,
         onNextScreenTap = { viewModel.onNextTap() },
         onPreviousScreenTap = { viewModel.onPreviousTap() },
         onPauseLongPress = { viewModel.onPause() },
+        onPrepared = { },
         screenContent = screenContent
     )
 
-    LaunchedEffect(key1 = isActive, key2 = positionPage, key3 = screenState.screenIndex) {
+    LaunchedEffect(key1 = isActive, key2 = id, key3 = screenState.currentScreenIndex) {
         if (isActive) {
-            viewModel.startTimer()
+            viewModel.startProgress()
         }
     }
 }
@@ -99,68 +86,106 @@ fun CurrentScreen(
     onNextScreenTap: () -> Unit,
     onPreviousScreenTap: () -> Unit,
     onPauseLongPress: () -> Unit,
+    onPrepared: () -> Unit, // loaded
     screenContent: @Composable (StoryPage.Custom) -> Unit
 ) {
     Box(
-        modifier = Modifier.pointerInput(Unit) {
-            detectTapGestures(
-                onDoubleTap = { offset ->
-                    Log.d(TAG, "AppScreen: onDoubleTap $offset")
-                },
-                onLongPress = { offset ->
-                    Log.d(TAG, "AppScreen: onLongPress $offset")
-                    onPauseLongPress.invoke()
-                },
-                onPress = { offset ->
-                    Log.d(TAG, "AppScreen: onPress $offset")
-                },
-                onTap = { offset ->
-                    Log.d(TAG, "AppScreen: onTap $offset")
-                    if (offset.x < 500) {
-                        onPreviousScreenTap.invoke()
-                    } else {
-                        onNextScreenTap.invoke()
-                    }
-                })
-        },
+        modifier = Modifier.storyScreenGestures(
+            onPauseLongPress = onPauseLongPress,
+            onNextScreenTap = onNextScreenTap,
+            onPreviousScreenTap = onPreviousScreenTap
+        )
     ) {
-        when (val screen = story.screens[currentSlice]) {
-            is StoryPage.Image -> {
-                StoryImageContent(
-                    image = screen.image,
-                    title = screen.title,
-                )
-            }
+        ContentItem(
+            screen = story.screens[currentSlice],
+            screenContent = screenContent,
+            onPrepared = onPrepared
+        )
+        ProgressBar(
+            progress = progress,
+            currentPage = currentSlice,
+            numberOfPage = story.screens.size
+        )
+    }
+}
 
-            is StoryPage.Video -> {
-                StoryVideoContent(video = screen.video, title = screen.title)
-            }
+private fun Modifier.storyScreenGestures(
+    onPauseLongPress: () -> Unit,
+    onNextScreenTap: () -> Unit,
+    onPreviousScreenTap: () -> Unit
+) =
+    this.pointerInput(Unit) {
+        detectTapGestures(
+            onDoubleTap = { offset ->
+                Log.d(TAG, "AppScreen: onDoubleTap $offset")
+            },
+            onLongPress = { offset ->
+                Log.d(TAG, "AppScreen: onLongPress $offset")
+                onPauseLongPress.invoke()
+            },
+            onPress = { offset ->
+                Log.d(TAG, "AppScreen: onPress $offset")
+            },
+            onTap = { offset ->
+                Log.d(TAG, "AppScreen: onTap $offset")
+                if (offset.x < 500) {
+                    onPreviousScreenTap.invoke()
+                } else {
+                    onNextScreenTap.invoke()
+                }
+            })
+    }
 
-            is StoryPage.Custom -> {
-                screenContent.invoke(screen)
-            }
+@Composable
+private fun ContentItem(
+    screen: StoryPage.Screen,
+    screenContent: @Composable (StoryPage.Custom) -> Unit,
+    onPrepared: () -> Unit, // loaded
+) {
+    when (screen) {
+        is StoryPage.Image -> {
+            StoryImageContent(
+                image = screen.image,
+                title = screen.title,
+                onPrepared = onPrepared
+            )
         }
 
-        Row(
-            modifier = Modifier,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Spacer(modifier = Modifier.padding(4.dp))
+        is StoryPage.Video -> {
+            StoryVideoContent(video = screen.video, title = screen.title)
+        }
 
-            ProgressSlices(
-                progress = progress,
-                currentPage = currentSlice,
-                numberOfPage = story.screens.size,
-                modifier = Modifier
-                    .padding(top = 12.dp, bottom = 12.dp)
-                    .clip(RoundedCornerShape(12.dp))
-            )
+        is StoryPage.Custom -> {
+            screenContent.invoke(screen)
         }
     }
 }
 
 @Composable
-fun RowScope.ProgressSlices(
+private fun ProgressBar(
+    progress: Float, // [0, 1]
+    currentPage: Int,
+    numberOfPage: Int
+) {
+    Row(
+        modifier = Modifier,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Spacer(modifier = Modifier.padding(4.dp))
+
+        ProgressSlices(
+            progress = progress,
+            currentPage = currentPage,
+            numberOfPage = numberOfPage,
+            modifier = Modifier
+                .padding(top = 12.dp, bottom = 12.dp)
+                .clip(RoundedCornerShape(12.dp))
+        )
+    }
+}
+
+@Composable
+private fun RowScope.ProgressSlices(
     progress: Float,
     currentPage: Int,
     numberOfPage: Int,

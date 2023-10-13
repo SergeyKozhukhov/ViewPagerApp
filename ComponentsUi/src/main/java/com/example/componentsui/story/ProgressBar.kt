@@ -1,4 +1,4 @@
-package com.example.componentsui.stories.elements
+package com.example.componentsui.story
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing

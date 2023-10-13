@@ -22,8 +22,8 @@ import com.example.componentsui.stories.page.PageState
 import com.example.componentsui.stories.page.StoryPage
 import com.example.componentsui.stories.page.VideoPage
 import com.example.componentsui.stories.page.story.StoryScreen
-import com.example.componentsui.stories.page.story.StoryScreenBorderEvent
-import com.example.componentsui.stories.page.story.StoryScreenEvent
+import com.example.componentsui.story.StoryScreenBorderEvent
+import com.example.componentsui.story.StoryScreenEvent
 import com.example.componentsui.stories.page.video.VideoScreen
 import kotlinx.coroutines.launch
 
@@ -65,9 +65,10 @@ fun StoriesScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         HorizontalPager(
-            state = pagerState, modifier = Modifier.fillMaxSize()
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+            beyondBoundsPageCount = 1
         ) { currentPosition ->
-            // onPageChanged.invoke(pagerState.currentPage, currentPosition)
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -81,7 +82,7 @@ fun StoriesScreen(
                     is PageState.Success -> SuccessState(
                         contentPage = currentState.content,
                         positionPage = currentPosition,
-                        isActive = currentPosition == pagerState.settledPage,
+                        isActive = currentPosition == pagerState.settledPage && !pagerState.isScrollInProgress,
                         onScreenEvent = onScreenEvent,
                         onBorderEvent = { event, page ->
                             onBorderEvent.invoke(event, page)

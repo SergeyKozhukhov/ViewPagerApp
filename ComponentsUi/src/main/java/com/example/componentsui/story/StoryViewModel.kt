@@ -1,4 +1,4 @@
-package com.example.componentsui.stories.page.story
+package com.example.componentsui.story
 
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -25,7 +25,7 @@ class StoryViewModel(
 
     fun startProgress() {
         viewModelScope.coroutineContext.cancelChildren()
-        launchTimer(0f)
+        launchTimer(progress)
     }
 
     private fun launchTimer(startPosition: Float) {

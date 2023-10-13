@@ -1,4 +1,4 @@
-package com.example.componentsui.stories.page.story
+package com.example.componentsui.story
 
 data class StoryState(
     val currentScreenIndex: Int = 0,

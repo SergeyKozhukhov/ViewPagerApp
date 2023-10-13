@@ -13,8 +13,8 @@ import com.example.viewpagerapp.data.Repository
 import com.example.viewpagerapp.data.converters.ContentConverter
 import com.example.viewpagerapp.data.converters.EntryPointConverter
 import com.example.componentsui.stories.page.PageState
-import com.example.componentsui.stories.page.story.StoryScreenBorderEvent
-import com.example.componentsui.stories.page.story.StoryScreenEvent
+import com.example.componentsui.story.StoryScreenBorderEvent
+import com.example.componentsui.story.StoryScreenEvent
 import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch

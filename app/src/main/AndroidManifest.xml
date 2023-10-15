@@ -18,7 +18,7 @@
             android:name=".presentation.content.ContentActivity"
             android:exported="false"
             android:label="@string/title_activity_content"
-            android:theme="@style/Theme.ViewPagerApp" />
+            android:theme="@style/Theme.ContentViewPagerApp" />
         <activity
             android:name=".presentation.main.MainActivity"
             android:exported="true"

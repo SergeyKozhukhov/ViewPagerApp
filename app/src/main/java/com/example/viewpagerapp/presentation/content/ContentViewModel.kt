@@ -36,8 +36,8 @@ class ContentViewModel(
     var prevPosition = -1
     private var isNeedPagination = true
 
-    fun onPageChanged(previousPosition: Int, nextPosition: Int) {
-        Log.d(TAG, "onPageChanged: prev: $previousPosition next: $nextPosition")
+    fun onCurrentPageChanged(previousPosition: Int, nextPosition: Int) {
+        Log.d(TAG, "onCurrentPageChanged: prev: $previousPosition next: $nextPosition")
         uiState.value = ContentUiState.Process
         viewModelScope.launch {
             val prev = if (prevPosition == -1) nextPosition else prevPosition
@@ -128,6 +128,10 @@ class ContentViewModel(
         } else {
             -1
         }
+    }
+
+    fun onSettledPageChanged(position: Int) {
+        Log.d(TAG, "onSettledPageChanged: next: $position")
     }
 
     fun onInitStories(position: Int) {

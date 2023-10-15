@@ -61,10 +61,17 @@ fun ContentStoriesScreen(
             viewModel.onPageScreenShow(pagePosition, screenPosition)
         },
         onError = { position, e -> viewModel.onError(position, e) },
-        loadingContent = { CircularProgressIndicator() },
+        loadingContent = { LoadingContent() },
         storyScreenContent = { page -> CustomStoryScreen(page) },
         pageContent = { position -> CustomPageContent(pageState = contentStates[position]) }
     )
+}
+
+@Composable
+private fun LoadingContent() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
+    }
 }
 
 @Composable

@@ -8,12 +8,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
@@ -22,12 +20,14 @@ import com.example.componentsui.stories.page.ContentPage
 import com.example.componentsui.stories.page.PageState
 import com.example.componentsui.stories.page.StoryPage
 import com.example.componentsui.stories.page.VideoPage
+import com.example.componentsui.stories.page.defaults.DefaultErrorState
+import com.example.componentsui.stories.page.defaults.DefaultIdleState
+import com.example.componentsui.stories.page.defaults.DefaultLoadingState
 import com.example.componentsui.stories.page.story.StoryScreen
 import com.example.componentsui.stories.page.video.VideoScreen
 import com.example.componentsui.story.StoryScreenBorderEvent
 import com.example.componentsui.story.StoryScreenEvent
 import kotlinx.coroutines.launch
-
 
 // https://www.composables.com/components/foundation/horizontalpager
 // TODO: position - [1...], index - [0...]
@@ -46,11 +46,11 @@ fun StoriesScreen(
     onPreviousPageSwipe: (position: Int) -> Unit,
     onPageScreenShow: (pagePosition: Int, screenPosition: Int) -> Unit,
     onError: (position: Int, e: Throwable) -> Unit,
-    idleContent: @Composable () -> Unit = { Text("Idle") },
-    loadingContent: @Composable () -> Unit = { Text("Loading") },
+    idleContent: @Composable () -> Unit = { DefaultIdleState() },
+    loadingContent: @Composable () -> Unit = { DefaultLoadingState() },
     storyScreenContent: @Composable (StoryPage.Custom) -> Unit,
     pageContent: @Composable (position: Int) -> Unit,
-    errorContent: @Composable (e: Throwable) -> Unit = { Text("Error") }
+    errorContent: @Composable (e: Throwable) -> Unit = { DefaultErrorState(it) }
 ) {
     val pagerState =
         rememberPagerState(initialPage = initialPage, pageCount = { contentStates.size })
@@ -67,52 +67,49 @@ fun StoriesScreen(
         onInitStories.invoke(initialPage)
     })
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize(),
-            beyondBoundsPageCount = 1
-        ) { currentPosition ->
-            Log.d("ContentViewModel", "preload position: $currentPosition")
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .background(color = Color.Yellow)
-                    .fillMaxSize()
-                    .border(width = Dp(4f), color = Color.Black)
-            ) {
-                when (val currentState = contentStates[currentPosition]) {
-                    is PageState.Idle -> idleContent.invoke()
-                    is PageState.Loading -> loadingContent.invoke()
-                    is PageState.Success -> SuccessState(
-                        contentPage = currentState.content,
-                        positionPage = currentPosition,
-                        isActive = currentPosition == pagerState.settledPage && !pagerState.isScrollInProgress,
-                        onScreenEvent = onScreenEvent,
-                        onBorderEvent = { event, page ->
-                            onBorderEvent.invoke(event, page)
-                            if (event == StoryScreenBorderEvent.NEXT_SCREEN_TAP || event == StoryScreenBorderEvent.NEXT_SCREEN_TIME) {
-                                scope.launch { pagerState.animateScrollToPage(page + 1) }
-                            }
+    HorizontalPager(
+        state = pagerState,
+        modifier = Modifier.fillMaxSize(),
+        beyondBoundsPageCount = 1
+    ) { currentPosition ->
+        Log.d("ContentViewModel", "preload position: $currentPosition")
+        Box(
+            modifier = Modifier
+                .background(color = Color.Yellow)
+                .fillMaxSize()
+                .border(width = Dp(4f), color = Color.Black)
+        ) {
+            when (val currentState = contentStates[currentPosition]) {
+                is PageState.Idle -> idleContent.invoke()
+                is PageState.Loading -> loadingContent.invoke()
+                is PageState.Success -> SuccessState(
+                    contentPage = currentState.content,
+                    positionPage = currentPosition,
+                    isActive = currentPosition == pagerState.settledPage && !pagerState.isScrollInProgress,
+                    onScreenEvent = onScreenEvent,
+                    onBorderEvent = { event, page ->
+                        onBorderEvent.invoke(event, page)
+                        if (event == StoryScreenBorderEvent.NEXT_SCREEN_TAP || event == StoryScreenBorderEvent.NEXT_SCREEN_TIME) {
+                            scope.launch { pagerState.animateScrollToPage(page + 1) }
+                        }
 
-                            if (event == StoryScreenBorderEvent.PREVIOUS_SCREEN_TAP) {
-                                scope.launch { pagerState.animateScrollToPage(page - 1) }
-                            }
-                        },
-                        onNextPageSwipe = onNextPageSwipe,
-                        onPreviousPageSwipe = onPreviousPageSwipe,
-                        onPageScreenShow = onPageScreenShow,
-                        storyScreenContent = storyScreenContent,
-                        pageContent = pageContent
-                    )
+                        if (event == StoryScreenBorderEvent.PREVIOUS_SCREEN_TAP) {
+                            scope.launch { pagerState.animateScrollToPage(page - 1) }
+                        }
+                    },
+                    onNextPageSwipe = onNextPageSwipe,
+                    onPreviousPageSwipe = onPreviousPageSwipe,
+                    onPageScreenShow = onPageScreenShow,
+                    storyScreenContent = storyScreenContent,
+                    pageContent = pageContent
+                )
 
-                    is PageState.Error -> {
-                        onError.invoke(currentPosition, currentState.e)
-                        errorContent.invoke(currentState.e)
-                    }
+                is PageState.Error -> {
+                    onError.invoke(currentPosition, currentState.e)
+                    errorContent.invoke(currentState.e)
                 }
-                CloseButton(onClick = { onCloseClick.invoke(currentPosition) })
             }
+            CloseButton(onClick = { onCloseClick.invoke(currentPosition) })
         }
     }
 }

@@ -1,15 +1,11 @@
 package com.example.componentsui.stories.page.story
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.componentsui.stories.page.StoryPage
 import com.example.componentsui.stories.page.story.image.StoryImageContent
 import com.example.componentsui.stories.page.story.video.StoryVideoContent
 import com.example.componentsui.story.StoryScreenBorderEvent
 import com.example.componentsui.story.StoryScreenEvent
-import com.example.componentsui.story.StoryViewModel
 import com.example.componentsui.story.StoryViewer
 
 private const val TAG = "StoriesScreen"

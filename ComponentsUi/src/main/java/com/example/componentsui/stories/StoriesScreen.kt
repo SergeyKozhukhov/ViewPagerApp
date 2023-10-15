@@ -23,9 +23,9 @@ import com.example.componentsui.stories.page.PageState
 import com.example.componentsui.stories.page.StoryPage
 import com.example.componentsui.stories.page.VideoPage
 import com.example.componentsui.stories.page.story.StoryScreen
+import com.example.componentsui.stories.page.video.VideoScreen
 import com.example.componentsui.story.StoryScreenBorderEvent
 import com.example.componentsui.story.StoryScreenEvent
-import com.example.componentsui.stories.page.video.VideoScreen
 import kotlinx.coroutines.launch
 
 
@@ -59,7 +59,7 @@ fun StoriesScreen(
     LaunchedEffect(pagerState) {
         // Collect from the pager state a snapshotFlow reading the currentPage
         snapshotFlow { pagerState.currentPage }.collect { page ->
-            onPageChanged.invoke(pagerState.currentPage, page)
+            onPageChanged.invoke(0, pagerState.currentPage)
         }
     }
 

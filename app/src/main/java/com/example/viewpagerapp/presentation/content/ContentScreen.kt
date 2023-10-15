@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,8 +17,6 @@ import com.example.viewpagerapp.domain.content.StoryContent
 import com.example.viewpagerapp.presentation.content.stories.CustomStoriesPage
 import com.example.viewpagerapp.presentation.content.stories.CustomStoryScreen
 
-private const val TAG = "StoriesScreen"
-
 @Composable
 fun ContentScreen(
     currentId: Int,
@@ -29,16 +26,11 @@ fun ContentScreen(
 ) {
 
     val initialPage = remember { ids.indexOfFirst { it == currentId } }
-    LaunchedEffect(key1 = true) {
-        viewModel.onPageChanged(
-            nextPosition = initialPage
-        )
-    }
 
     val uiState = viewModel.uiState
     when (uiState.value) {
         ContentUiState.IDLE -> {}
-        ContentUiState.Process -> CBroStoriesScreen(
+        ContentUiState.Process -> ContentStoriesScreen(
             initialPage = initialPage,
             viewModel = viewModel
         )
@@ -48,7 +40,7 @@ fun ContentScreen(
 }
 
 @Composable
-fun CBroStoriesScreen(
+fun ContentStoriesScreen(
     initialPage: Int,
     viewModel: ContentViewModel
 ) {
@@ -59,7 +51,7 @@ fun CBroStoriesScreen(
         initialPage = initialPage,
         contentStates = contentStates.toList(),
         onInitStories = { position -> viewModel.onInitStories(position) },
-        onPageChanged = { previous, next -> viewModel.onPageChanged(next) },
+        onPageChanged = { previous, next -> viewModel.onPageChanged(previous, next) },
         onCloseClick = { position -> viewModel.onCloseClick(position) },
         onScreenEvent = { event, page, screen -> viewModel.onScreenEvent(event, page, screen) },
         onBorderEvent = { event, page -> viewModel.onBorderEvent(event, page) },

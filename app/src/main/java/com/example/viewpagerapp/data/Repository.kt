@@ -21,4 +21,9 @@ class Repository(
         delay(2000)
         contentConverter.convert(dataSource.getContent(id))
     }
+
+    suspend fun getContent(ids: List<Int>): List<Content> = withContext(Dispatchers.IO) {
+        delay(2000)
+        contentConverter.convert(dataSource.getContent(ids))
+    }
 }

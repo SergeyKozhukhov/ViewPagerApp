@@ -21,7 +21,7 @@ class DataSource(
         context.resources.openRawResource(R.raw.entry_points), typeReference
     )
 
-    fun getContent(id: Int): ContentEntity {
+    fun getContent(id: Int, isNeedLog: Boolean = true): ContentEntity {
         val file = when (id) {
             1 -> ONE
             2 -> TWO
@@ -31,10 +31,17 @@ class DataSource(
             else -> throw IllegalArgumentException()
         }
 
-        Log.d(TAG, "getContent: $id")
+        if (isNeedLog) {
+            Log.d("ContentViewModel", "getContent: $id")
+        }
         return objectMapper.readValue(
             context.resources.openRawResource(file), ContentEntity::class.java
         )
+    }
+
+    fun getContent(ids: List<Int>): List<ContentEntity> {
+        Log.d("ContentViewModel", "getContent: $ids")
+        return ids.map { id -> getContent(id, false) }
     }
 
     fun getContent2(id: Int): ContentEntity {

@@ -7,7 +7,7 @@ import com.example.componentsui.stories.page.StoryPage
 import com.example.viewpagerapp.presentation.content.stories.CustomStoriesPage
 import com.example.viewpagerapp.presentation.content.stories.CustomStoryScreen
 
-class ContentConverter {
+class ContentPageConverter {
 
     fun convert(source: Content) = when (source) {
         is StoryContent -> convertStory(source)

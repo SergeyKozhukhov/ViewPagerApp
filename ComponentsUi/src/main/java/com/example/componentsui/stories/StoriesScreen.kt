@@ -38,7 +38,7 @@ fun StoriesScreen(
     initialPage: Int,
     contentStates: List<PageState>,
     onInitStories: (position: Int) -> Unit,
-    onCurrentPageChanged: (previousPosition: Int, nextPosition: Int) -> Unit,
+    onCurrentPageChanged: (nextPosition: Int) -> Unit,
     onSettledPageChanged: (position: Int) -> Unit,
     onCloseClick: (position: Int) -> Unit,
     onScreenEvent: (event: StoryScreenEvent, page: Int, screen: Int) -> Unit,
@@ -60,7 +60,7 @@ fun StoriesScreen(
     LaunchedEffect(pagerState) {
         // Collect from the pager state a snapshotFlow reading the currentPage
         snapshotFlow { pagerState.currentPage }.collect { page ->
-            onCurrentPageChanged.invoke(0, page)
+            onCurrentPageChanged.invoke(page)
         }
     }
 

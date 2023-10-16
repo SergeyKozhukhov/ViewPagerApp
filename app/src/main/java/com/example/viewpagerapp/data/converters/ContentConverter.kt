@@ -11,38 +11,30 @@ class ContentConverter {
 
     fun convert(list: List<ContentEntity>) = list.map { convert(it) }
 
-    fun convert(source: ContentEntity): Content =
-        when (source) {
-            is StoryContentEntity -> convertStoryImage(source)
-            is VideoContentEntity -> convertVideo(source)
-        }
+    fun convert(source: ContentEntity): Content = when (source) {
+        is StoryContentEntity -> convertStoryImage(source)
+        is VideoContentEntity -> convertVideo(source)
+    }
 
 
-    private fun convertStoryImage(source: StoryContentEntity) = StoryContent(
-        id = source.id,
-        items = source.items.map
-        { item ->
+    private fun convertStoryImage(source: StoryContentEntity) =
+        StoryContent(id = source.id, subId = source.subId, items = source.items.map { item ->
             when (item) {
                 is StoryContentEntity.Image -> {
                     StoryContent.Story(
-                        image = item.image,
-                        title = item.title
+                        image = item.image, title = item.title
                     )
                 }
 
                 is StoryContentEntity.Video -> {
                     StoryContent.Video(
-                        video = item.video,
-                        title = item.title
+                        video = item.video, title = item.title
                     )
                 }
             }
-        }
-    )
+        })
 
     private fun convertVideo(source: VideoContentEntity) = VideoContent(
-        id = source.id,
-        video = source.video,
-        title = source.title
+        id = source.id, subId = source.subId, video = source.video, title = source.title
     )
 }

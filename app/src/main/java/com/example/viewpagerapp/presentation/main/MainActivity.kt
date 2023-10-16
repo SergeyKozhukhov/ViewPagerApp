@@ -27,11 +27,6 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    LaunchedEffect(key1 = true) {
-                        lifecycleScope.launch(Dispatchers.IO) {
-                            val res = DataSource(this@MainActivity.applicationContext, ObjectMapper()).getContent2(2)
-                        }
-                    }
 
                     // VideoPlayer(uri = Uri.parse("https://samplelib.com/lib/preview/mp4/sample-5s.mp4"))
                     EntryPointsScreen(onItemClick = { currentId, ids ->

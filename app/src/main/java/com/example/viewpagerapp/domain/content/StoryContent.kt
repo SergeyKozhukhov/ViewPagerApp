@@ -2,7 +2,8 @@ package com.example.viewpagerapp.domain.content
 
 data class StoryContent(
     override val id: Int,
-    val items: List<Item>
+    override val subId: Int,
+    val items: List<Item>,
 ) : Content() {
 
     sealed interface Item

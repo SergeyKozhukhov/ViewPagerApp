@@ -10,14 +10,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.core.os.bundleOf
+import com.example.viewpagerapp.domain.ContentId
+import com.example.viewpagerapp.domain.ContentKey
 import com.example.viewpagerapp.presentation.content.ui.theme.ViewPagerAppTheme
 
 class ContentActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val currentId = intent.getIntExtra(CURRENT_ID_KEY, -1)
-        val ids = checkNotNull(intent.getIntArrayExtra(IDS_KEY))
+        val currentId = checkNotNull(intent.getParcelableExtra<ContentId>(CURRENT_ID_KEY))
+        val ids = checkNotNull(intent.getParcelableArrayListExtra<ContentId>(IDS_KEY))
 
         setContent {
             ViewPagerAppTheme {
@@ -37,12 +39,12 @@ class ContentActivity : ComponentActivity() {
         private const val CURRENT_ID_KEY = "CURRENT_ID_KEY"
         private const val IDS_KEY = "IDS_KEY"
 
-        fun newIntent(context: Context, id: Int, ids: IntArray) =
+        fun newIntent(context: Context, key: ContentKey, ids: List<ContentKey>) =
             Intent(context, ContentActivity::class.java).apply {
                 putExtras(
                     bundleOf(
-                        CURRENT_ID_KEY to id,
-                        IDS_KEY to ids,
+                        CURRENT_ID_KEY to ContentId(key.id, key.subId),
+                        IDS_KEY to ids.map { ContentId(it.id, it.subId) },
                     )
                 )
             }

@@ -23,12 +23,14 @@ import com.fasterxml.jackson.annotation.JsonTypeName
 )
 sealed class ContentEntity {
     abstract val id: Int
+    abstract val subId: Int
     abstract val type: String
 }
 
 @JsonTypeName("StoryType")
 data class StoryContentEntity(
     @JsonProperty("id") override val id: Int,
+    @JsonProperty("subId") override val subId: Int,
     @JsonProperty("items") val items: List<Item>
 ) : ContentEntity() {
 
@@ -86,6 +88,7 @@ data class StoryContentEntity(
 @JsonTypeName("VideoType")
 data class VideoContentEntity(
     @JsonProperty("id") override val id: Int,
+    @JsonProperty("subId") override val subId: Int,
     @JsonProperty("video") val video: String,
     @JsonProperty("title") val title: String
 ) : ContentEntity() {

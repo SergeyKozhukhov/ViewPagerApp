@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -25,11 +24,13 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.viewpagerapp.R
+import com.example.viewpagerapp.domain.ContentId
+import com.example.viewpagerapp.domain.ContentKey
 
 @Composable
 fun EntryPointsScreen(
     viewModel: EntryPointsViewModel = viewModel(factory = EntryPointsViewModel.Factory),
-    onItemClick: (Int, IntArray) -> Unit
+    onItemClick: (ContentKey, List<ContentKey>) -> Unit
 ) {
     LaunchedEffect(key1 = true) {
         viewModel.getEntryPoints()
@@ -50,10 +51,8 @@ fun EntryPointsScreen(
                         .border(Dp(4f), Color.Black)
                         .clickable {
                             onItemClick.invoke(
-                                entryPoint.id,
+                                entryPoint,
                                 uiState.entryPoints
-                                    .map { it.id }
-                                    .toIntArray()
                             )
                         },
                     contentAlignment = Alignment.Center

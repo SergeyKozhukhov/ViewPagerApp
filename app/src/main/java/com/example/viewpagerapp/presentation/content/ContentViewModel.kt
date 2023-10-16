@@ -1,6 +1,6 @@
 package com.example.viewpagerapp.presentation.content
 
-import android.content.res.Resources.NotFoundException
+import android.content.res.Resources
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -16,6 +16,7 @@ import com.example.viewpagerapp.data.DataSource
 import com.example.viewpagerapp.data.Repository
 import com.example.viewpagerapp.data.converters.ContentConverter
 import com.example.viewpagerapp.data.converters.EntryPointConverter
+import com.example.viewpagerapp.domain.ContentId
 import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -23,9 +24,9 @@ import kotlinx.coroutines.launch
 private const val TAG = "ContentViewModel"
 
 class ContentViewModel(
-    private val ids: IntArray,
+    private val ids: List<ContentId>,
     private val repository: Repository,
-    private val storyConverter: com.example.viewpagerapp.presentation.content.ContentConverter,
+    private val contentPageConverter: ContentPageConverter,
     private val preload: Int = 0
 ) : ViewModel() {
 
@@ -36,8 +37,8 @@ class ContentViewModel(
     var prevPosition = -1
     private var isNeedPagination = true
 
-    fun onCurrentPageChanged(previousPosition: Int, nextPosition: Int) {
-        Log.d(TAG, "onCurrentPageChanged: prev: $previousPosition next: $nextPosition")
+    fun onCurrentPageChanged(nextPosition: Int) {
+        Log.d(TAG, "onCurrentPageChanged next: $nextPosition")
         uiState.value = ContentUiState.Process
         viewModelScope.launch {
             val prev = if (prevPosition == -1) nextPosition else prevPosition
@@ -58,21 +59,21 @@ class ContentViewModel(
     private suspend fun makeGroupRequest(position: Int) {
         val indexes = getGroupPositions(position = position)
         try {
-            val requestIds = mutableListOf<Int>() // there are ids
+            val requestIds = mutableListOf<ContentId>() // there are ids
             indexes.forEach { index ->
                 if (itemStates[index] == PageState.Idle) {
                     requestIds.add(ids[index])
                     itemStates[index] = PageState.Loading
                 }
             }
-            val result = repository.getContent(requestIds.toList())
+            val result = repository.getContent(requestIds)
             requestIds.forEach { requestId ->
                 itemStates[ids.indexOfFirst { it == requestId }] =
-                    result.find { it.id == requestId }?.let { content ->
-                        val contentPage = storyConverter.convert(content)
+                    result.find { it.id == requestId.id }?.let { content ->
+                        val contentPage = contentPageConverter.convert(content)
                         PageState.Success(contentPage)
                     } ?: run {
-                        PageState.Error(NotFoundException())
+                        PageState.Error(Resources.NotFoundException())
                     }
             }
         } catch (e: CancellationException) {
@@ -95,7 +96,7 @@ class ContentViewModel(
             if (currentStoryState is PageState.Idle) {
                 itemStates[pos] = PageState.Loading
                 val result = repository.getContent(ids[pos])
-                val ans = storyConverter.convert(result)
+                val ans = contentPageConverter.convert(result)
                 itemStates[pos] = PageState.Success(ans)
             }
         } catch (e: CancellationException) {
@@ -118,16 +119,8 @@ class ContentViewModel(
     }
 
     private fun detectSinglePosition(prevPos: Int, nextPos: Int): Int {
-        val res = if (nextPos > prevPos) {
-            nextPos + 1
-        } else {
-            nextPos - 1
-        }
-        return if (res >= 0 && res < ids.size) {
-            res
-        } else {
-            -1
-        }
+        val res = if (nextPos > prevPos) nextPos + 1 else nextPos - 1
+        return if (res >= 0 && res < ids.size) res else -1
     }
 
     fun onSettledPageChanged(position: Int) {
@@ -179,7 +172,7 @@ class ContentViewModel(
 
     companion object {
 
-        fun provide(ids: IntArray) = object : ViewModelProvider.Factory {
+        fun provide(ids: List<ContentId>) = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
                 val application =
@@ -194,7 +187,7 @@ class ContentViewModel(
                 return ContentViewModel(
                     ids,
                     repository,
-                    com.example.viewpagerapp.presentation.content.ContentConverter(),
+                    ContentPageConverter(),
                     1
                 ) as T
             }

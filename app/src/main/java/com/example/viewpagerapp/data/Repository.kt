@@ -2,6 +2,7 @@ package com.example.viewpagerapp.data
 
 import com.example.viewpagerapp.data.converters.ContentConverter
 import com.example.viewpagerapp.data.converters.EntryPointConverter
+import com.example.viewpagerapp.domain.ContentKey
 import com.example.viewpagerapp.domain.content.Content
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -17,13 +18,13 @@ class Repository(
         entryPointConverter.convert(dataSource.getEntryPoints())
     }
 
-    suspend fun getContent(id: Int): Content = withContext(Dispatchers.IO) {
+    suspend fun getContent(key: ContentKey): Content = withContext(Dispatchers.IO) {
         delay(2000)
-        contentConverter.convert(dataSource.getContent(id))
+        contentConverter.convert(dataSource.getContent(key))
     }
 
-    suspend fun getContent(ids: List<Int>): List<Content> = withContext(Dispatchers.IO) {
+    suspend fun getContent(keys: List<ContentKey>): List<Content> = withContext(Dispatchers.IO) {
         delay(2000)
-        contentConverter.convert(dataSource.getContent(ids))
+        contentConverter.convert(dataSource.getContent(keys))
     }
 }

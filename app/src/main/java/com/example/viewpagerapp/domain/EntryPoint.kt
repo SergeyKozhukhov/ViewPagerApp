@@ -1,6 +1,7 @@
 package com.example.viewpagerapp.domain
 
 data class EntryPoint(
-    val id: Int,
+    override val id: Int,
+    override val subId: Int,
     val image: String,
-)
+) : ContentKey

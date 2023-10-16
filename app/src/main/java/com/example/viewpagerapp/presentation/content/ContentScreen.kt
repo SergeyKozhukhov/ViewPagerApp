@@ -13,14 +13,15 @@ import com.example.componentsui.stories.StoriesScreen
 import com.example.componentsui.stories.page.PageState
 import com.example.componentsui.stories.page.StoryPage
 import com.example.componentsui.stories.page.story.image.StoryImageContent
+import com.example.viewpagerapp.domain.ContentId
 import com.example.viewpagerapp.domain.content.StoryContent
 import com.example.viewpagerapp.presentation.content.stories.CustomStoriesPage
 import com.example.viewpagerapp.presentation.content.stories.CustomStoryScreen
 
 @Composable
 fun ContentScreen(
-    currentId: Int,
-    ids: IntArray,
+    currentId: ContentId,
+    ids: List<ContentId>,
     viewModel: ContentViewModel = viewModel(factory = ContentViewModel.provide(ids)),
     onCloseClick: () -> Unit
 ) {
@@ -51,7 +52,7 @@ fun ContentStoriesScreen(
         initialPage = initialPage,
         contentStates = contentStates.toList(),
         onInitStories = { position -> viewModel.onInitStories(position) },
-        onCurrentPageChanged = { previous, next -> viewModel.onCurrentPageChanged(previous, next) },
+        onCurrentPageChanged = { next -> viewModel.onCurrentPageChanged(next) },
         onSettledPageChanged = { position -> viewModel.onSettledPageChanged(position) },
         onCloseClick = { position -> viewModel.onCloseClick(position) },
         onScreenEvent = { event, page, screen -> viewModel.onScreenEvent(event, page, screen) },

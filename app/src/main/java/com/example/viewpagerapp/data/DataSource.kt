@@ -5,10 +5,9 @@ import android.util.Log
 import com.example.viewpagerapp.R
 import com.example.viewpagerapp.data.models.ContentEntity
 import com.example.viewpagerapp.data.models.EntryPointEntity
+import com.example.viewpagerapp.domain.ContentKey
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
-
-private const val TAG = "StoriesScreen"
 
 class DataSource(
     private val context: Context,
@@ -21,43 +20,35 @@ class DataSource(
         context.resources.openRawResource(R.raw.entry_points), typeReference
     )
 
-    fun getContent(id: Int, isNeedLog: Boolean = true): ContentEntity {
-        val file = when (id) {
-            1 -> ONE
-            2 -> TWO
-            3 -> THREE
-            4 -> FOUR
-            5 -> FIVE
-            else -> throw IllegalArgumentException()
-        }
+    fun getContent(key: ContentKey, isNeedLog: Boolean = true): ContentEntity {
+        val file = getFile(key)
 
         if (isNeedLog) {
-            Log.d("ContentViewModel", "getContent: $id")
+            Log.d("ContentViewModel", "getContent: $key")
         }
         return objectMapper.readValue(
-            context.resources.openRawResource(file), ContentEntity::class.java
+            context.resources.openRawResource(file),
+            ContentEntity::class.java
         )
     }
 
-    fun getContent(ids: List<Int>): List<ContentEntity> {
-        Log.d("ContentViewModel", "getContent: $ids")
-        return ids.map { id -> getContent(id, false) }
+    private fun getFile(key: ContentKey) = if (key.id == 1 && key.subId == 111) {
+        ONE
+    } else if (key.id == 2 && key.subId == 112) {
+        TWO
+    } else if (key.id == 3 && key.subId == 113) {
+        THREE
+    } else if (key.id == 4 && key.subId == 114) {
+        FOUR
+    } else if (key.id == 5 && key.subId == 115) {
+        FIVE
+    } else {
+        throw IllegalArgumentException()
     }
 
-    fun getContent2(id: Int): ContentEntity {
-        val file = when (id) {
-            1 -> ONE
-            2 -> TWO
-            3 -> THREE
-            4 -> FOUR
-            5 -> FIVE
-            else -> throw IllegalArgumentException()
-        }
-
-        Log.d(TAG, "getContent: $id")
-        return objectMapper.readValue(
-            context.resources.openRawResource(file), ContentEntity::class.java
-        )
+    fun getContent(keys: List<ContentKey>): List<ContentEntity> {
+        Log.d("ContentViewModel", "getContent: $keys")
+        return keys.map { key -> getContent(key, false) }
     }
 
     private companion object {

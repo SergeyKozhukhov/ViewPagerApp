@@ -9,6 +9,7 @@ class EntryPointConverter {
 
     private fun convert(source: EntryPointEntity) = EntryPoint(
         id = source.id,
+        subId = source.subId,
         image = source.image
     )
 }

@@ -1,5 +1,8 @@
 package com.example.viewpagerapp.domain.content
 
-sealed class Content {
-    abstract val id: Int
+import com.example.viewpagerapp.domain.ContentKey
+
+sealed class Content : ContentKey {
+    abstract override val id: Int
+    abstract override val subId: Int
 }

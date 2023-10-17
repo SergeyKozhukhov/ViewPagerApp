@@ -53,8 +53,7 @@ fun StoriesScreen(
     pageContent: @Composable (position: Int) -> Unit,
     errorContent: @Composable (e: Throwable) -> Unit = { DefaultErrorState(it) }
 ) {
-    val pagerState =
-        rememberPagerState(initialPage = initialPage, pageCount = { contentStates.size })
+    val pagerState = rememberPagerState(initialPage = initialPage)
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(pagerState) {
@@ -82,6 +81,7 @@ fun StoriesScreen(
 
     HorizontalPager(
         state = pagerState,
+        pageCount = contentStates.size,
         modifier = Modifier.fillMaxSize(),
         beyondBoundsPageCount = 1
     ) { currentPosition ->

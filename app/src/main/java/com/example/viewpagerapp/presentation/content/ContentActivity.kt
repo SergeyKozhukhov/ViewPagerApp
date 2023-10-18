@@ -13,13 +13,17 @@ import androidx.core.os.bundleOf
 import com.example.viewpagerapp.domain.ContentId
 import com.example.viewpagerapp.domain.ContentKey
 import com.example.viewpagerapp.presentation.content.ui.theme.ViewPagerAppTheme
+import com.example.viewpagerapp.presentation.content.view.ViewFactory
 
 class ContentActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val currentId = checkNotNull(intent.getParcelableExtra<ContentId>(CURRENT_ID_KEY))
         val ids = checkNotNull(intent.getParcelableArrayListExtra<ContentId>(IDS_KEY))
+
+        val viewFactory = ViewFactory()
 
         setContent {
             ViewPagerAppTheme {
@@ -28,7 +32,12 @@ class ContentActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = Color.Transparent
                 ) {
-                    ContentScreen(currentId = currentId, ids = ids, onCloseClick = { finish() })
+                    ContentScreen(
+                        currentId = currentId,
+                        ids = ids,
+                        viewFactory = viewFactory,
+                        onCloseClick = { finish() }
+                    )
                 }
             }
         }

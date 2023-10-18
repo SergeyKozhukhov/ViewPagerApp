@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.componentsui.stories.StoriesScreen
 import com.example.componentsui.stories.page.PageState
@@ -17,13 +18,15 @@ import com.example.viewpagerapp.domain.ContentId
 import com.example.viewpagerapp.domain.content.StoryContent
 import com.example.viewpagerapp.presentation.content.stories.CustomStoriesPage
 import com.example.viewpagerapp.presentation.content.stories.CustomStoryScreen
+import com.example.viewpagerapp.presentation.content.view.ViewFactory
 
 @Composable
 fun ContentScreen(
     currentId: ContentId,
     ids: List<ContentId>,
     viewModel: ContentViewModel = viewModel(factory = ContentViewModel.provide(ids)),
-    onCloseClick: () -> Unit
+    viewFactory: ViewFactory,
+    onCloseClick: () -> Unit,
 ) {
 
     val initialPage = remember { ids.indexOfFirst { it == currentId } }
@@ -33,7 +36,8 @@ fun ContentScreen(
         ContentUiState.IDLE -> {}
         ContentUiState.Process -> ContentStoriesScreen(
             initialPage = initialPage,
-            viewModel = viewModel
+            viewModel = viewModel,
+            viewFactory = viewFactory
         )
 
         ContentUiState.Finish -> onCloseClick.invoke()
@@ -43,7 +47,8 @@ fun ContentScreen(
 @Composable
 fun ContentStoriesScreen(
     initialPage: Int,
-    viewModel: ContentViewModel
+    viewModel: ContentViewModel,
+    viewFactory: ViewFactory
 ) {
 
     val contentStates = viewModel.itemStates
@@ -64,7 +69,7 @@ fun ContentStoriesScreen(
         },
         onError = { position, e -> viewModel.onError(position, e) },
         loadingContent = { LoadingContent() },
-        storyScreenContent = { page -> CustomStoryScreen(page) },
+        storyScreenContent = { page -> CustomStoryScreen(page, viewFactory) },
         pageContent = { position -> CustomPageContent(pageState = contentStates[position]) }
     )
 }
@@ -77,7 +82,7 @@ private fun LoadingContent() {
 }
 
 @Composable
-private fun CustomStoryScreen(page: StoryPage.Custom) {
+private fun CustomStoryScreen(page: StoryPage.Custom, viewFactory: ViewFactory) {
     if (page is CustomStoryScreen) {
         when (page.item) {
             is StoryContent.Story -> {
@@ -98,6 +103,7 @@ private fun CustomStoryScreen(page: StoryPage.Custom) {
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
+                    SmthView(viewFactory = viewFactory)
                     Text(text = "video: ${page.item}")
                 }
             }
@@ -118,4 +124,9 @@ private fun CustomPageContent(pageState: PageState) {
             }
         }
     }
+}
+
+@Composable
+private fun SmthView(viewFactory: ViewFactory, modifier: Modifier = Modifier) {
+    AndroidView(factory = { context -> viewFactory.createSmth(context) }, modifier = modifier)
 }

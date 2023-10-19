@@ -9,12 +9,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.Dp
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import com.example.componentsui.stories.elements.CloseButton
 import com.example.componentsui.stories.page.ContentPage
 import com.example.componentsui.stories.page.PageState
@@ -28,6 +36,8 @@ import com.example.componentsui.stories.page.video.VideoScreen
 import com.example.componentsui.story.StoryScreenBorderEvent
 import com.example.componentsui.story.StoryScreenEvent
 import kotlinx.coroutines.launch
+
+const val SCREEN_DURATION = 5000L // ms
 
 // https://www.composables.com/components/foundation/horizontalpager
 // TODO: position - [1...], index - [0...]
@@ -51,7 +61,8 @@ fun StoriesScreen(
     loadingContent: @Composable () -> Unit = { DefaultLoadingState() },
     storyScreenContent: @Composable (StoryPage.Custom) -> Unit,
     pageContent: @Composable (position: Int) -> Unit,
-    errorContent: @Composable (e: Throwable) -> Unit = { DefaultErrorState(it) }
+    errorContent: @Composable (e: Throwable) -> Unit = { DefaultErrorState(it) },
+    lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 ) {
     val pagerState = rememberPagerState(initialPage = initialPage)
     val scope = rememberCoroutineScope()
@@ -79,11 +90,25 @@ fun StoriesScreen(
         onInitStories.invoke(initialPage)
     })
 
+    val userScrollEnabled = remember { mutableStateOf(true) }
+    var isRunningTimerAllowed by remember { mutableStateOf(true) }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = createObserver(
+            onPause = { isRunningTimerAllowed = false },
+            onResume = { isRunningTimerAllowed = true })
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     HorizontalPager(
         state = pagerState,
         pageCount = contentStates.size,
         modifier = Modifier.fillMaxSize(),
-        beyondBoundsPageCount = 1
+        beyondBoundsPageCount = 1,
+        userScrollEnabled = userScrollEnabled.value
     ) { currentPosition ->
         Log.d("ContentViewModel", "preload position: $currentPosition")
         Box(
@@ -97,13 +122,18 @@ fun StoriesScreen(
                 is PageState.Loading -> loadingContent.invoke()
                 is PageState.Success -> SuccessState(
                     contentPage = currentState.content,
-                    positionPage = currentPosition,
-                    isActive = currentPosition == pagerState.settledPage && !pagerState.isScrollInProgress,
+                    currentPosition = currentPosition,
+                    settledPosition = pagerState.settledPage,
+                    isActive = currentPosition == pagerState.settledPage && !pagerState.isScrollInProgress && isRunningTimerAllowed,
                     onScreenEvent = onScreenEvent,
                     onBorderEvent = { event, page ->
                         onBorderEvent.invoke(event, page)
                         if (event == StoryScreenBorderEvent.NEXT_SCREEN_TAP || event == StoryScreenBorderEvent.NEXT_SCREEN_TIME) {
-                            scope.launch { pagerState.animateScrollToPage(page + 1) }
+                            scope.launch {
+                                userScrollEnabled.value = false
+                                pagerState.animateScrollToPage(page + 1)
+                                userScrollEnabled.value = true
+                            }
                         }
 
                         if (event == StoryScreenBorderEvent.PREVIOUS_SCREEN_TAP) {
@@ -130,7 +160,8 @@ fun StoriesScreen(
 @Composable
 fun SuccessState(
     contentPage: ContentPage,
-    positionPage: Int,
+    currentPosition: Int,
+    settledPosition: Int,
     isActive: Boolean,
     onScreenEvent: (event: StoryScreenEvent, page: Int, screen: Int) -> Unit,
     onBorderEvent: (event: StoryScreenBorderEvent, page: Int) -> Unit,
@@ -144,13 +175,14 @@ fun SuccessState(
     when (contentPage) {
         is StoryPage -> {
             StoryScreen(
-                id = positionPage,
+                settledId = settledPosition,
                 isActive = isActive,
                 story = contentPage,
+                screenDuration = SCREEN_DURATION,
                 onScreenEvent = { event, screen ->
-                    onScreenEvent.invoke(event, positionPage, screen)
+                    onScreenEvent.invoke(event, currentPosition, screen)
                 },
-                onBorderEvent = { event -> onBorderEvent.invoke(event, positionPage) },
+                onBorderEvent = { event -> onBorderEvent.invoke(event, currentPosition) },
                 screenContent = storyScreenContent
             )
         }
@@ -162,7 +194,14 @@ fun SuccessState(
         }
 
         else -> {
-            pageContent.invoke(positionPage)
+            pageContent.invoke(currentPosition)
         }
     }
 }
+
+private fun createObserver(onPause: () -> Unit, onResume: () -> Unit) =
+    object : DefaultLifecycleObserver {
+        override fun onResume(owner: LifecycleOwner) = onResume.invoke()
+
+        override fun onPause(owner: LifecycleOwner) = onPause.invoke()
+    }

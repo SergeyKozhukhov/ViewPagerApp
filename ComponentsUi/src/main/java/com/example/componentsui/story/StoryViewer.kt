@@ -9,16 +9,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.platform.LocalViewConfiguration
 import kotlinx.coroutines.launch
 
 private const val TAG = "StoriesScreen"
@@ -27,42 +26,19 @@ private const val TAG = "StoriesScreen"
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StoryViewer(
-    id: Int,
+    settledId: Int,
     isActive: Boolean,
     screenCount: Int,
+    screenDuration: Long, // ms
     onScreenEvent: (event: StoryScreenEvent, screen: Int) -> Unit,
     onBorderEvent: (event: StoryScreenBorderEvent) -> Unit,
-    viewModel: StoryViewModel = viewModel(
-        key = "StoryScreen: $id",
-        factory = StoryViewModel.provide(screenCount = screenCount, screenDuration = 5)
-    ),
-    lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     screenContent: @Composable (screen: Int) -> Unit,
 ) {
-    DisposableEffect(lifecycleOwner) {
-        lifecycleOwner.lifecycle.addObserver(viewModel)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(viewModel)
-        }
-    }
 
-    val screenState by viewModel.uiState
-
-    if (screenState.event != StoryScreenEvent.IDLE) {
-        onScreenEvent.invoke(screenState.event, screenState.currentScreenIndex)
-        viewModel.onUpdateScreen()
-    }
-
-    if (screenState.borderEvent != StoryScreenBorderEvent.IDLE) {
-        onBorderEvent.invoke(screenState.borderEvent)
-        viewModel.resetPage()
-    }
-
-    val pagerState = rememberPagerState(initialPage = screenState.currentScreenIndex)
+    val pagerState = rememberPagerState(initialPage = 0)
     val scope = rememberCoroutineScope()
-    LaunchedEffect(key1 = screenState.currentScreenIndex) {
-        scope.launch { pagerState.scrollToPage(screenState.currentScreenIndex) }
-    }
+
+    var isPaused by remember { mutableStateOf(false) }
 
     HorizontalPager(
         state = pagerState,
@@ -72,9 +48,26 @@ fun StoryViewer(
     ) { position ->
         CurrentScreen(
             currentSlice = position,
-            onNextScreenTap = { viewModel.onNextTap() },
-            onPreviousScreenTap = { viewModel.onPreviousTap() },
-            onPauseLongPress = { viewModel.onPause() },
+            onNextScreenTap = {
+                if (pagerState.canScrollForward) {
+                    onScreenEvent.invoke(StoryScreenEvent.NEXT_SCREEN_TAP, position)
+                    scope.launch { pagerState.scrollToPage(position + 1) }
+                } else {
+                    onBorderEvent.invoke(StoryScreenBorderEvent.NEXT_SCREEN_TAP)
+                }
+            },
+            onPreviousScreenTap = {
+                if (pagerState.canScrollBackward) {
+                    onScreenEvent.invoke(
+                        StoryScreenEvent.PREVIOUS_SCREEN_TAP,
+                        pagerState.settledPage
+                    )
+                    scope.launch { pagerState.scrollToPage(position - 1) }
+                } else {
+                    onBorderEvent.invoke(StoryScreenBorderEvent.PREVIOUS_SCREEN_TAP)
+                }
+            },
+            onPauseLongPress = { isPaused = true },
             screenContent = screenContent
         )
     }
@@ -84,21 +77,24 @@ fun StoryViewer(
             .fillMaxWidth()
             .background(color = Color.White)
     ) {
-        ProgressBar(
-            progress = screenState.screenProgress,
-            currentScreen = screenState.currentScreenIndex,
-            screenCount = screenCount
+        AnimatedProgressBar(
+            id = settledId,
+            screenPosition = pagerState.currentPage,
+            screenCount = screenCount,
+            screenDuration = screenDuration,
+            isRunning = isActive && !isPaused,
+            onFinish = {
+                if (pagerState.canScrollForward) {
+                    onScreenEvent.invoke(StoryScreenEvent.NEXT_SCREEN_TIME, pagerState.currentPage)
+                    scope.launch { pagerState.scrollToPage(pagerState.currentPage + 1) }
+                } else {
+                    onBorderEvent.invoke(StoryScreenBorderEvent.NEXT_SCREEN_TIME)
+                }
+            }
         )
     }
-
-    LaunchedEffect(key1 = isActive, key2 = id, key3 = screenState.currentScreenIndex) {
-        if (isActive) {
-            viewModel.startProgress()
-        } else {
-            viewModel.onPause()
-        }
-    }
 }
+
 
 @Composable
 fun CurrentScreen(
@@ -108,6 +104,8 @@ fun CurrentScreen(
     onPauseLongPress: () -> Unit,
     screenContent: @Composable (screen: Int) -> Unit,
 ) {
+    val res = LocalViewConfiguration.current
+    res.longPressTimeoutMillis
     Box(
         modifier = Modifier.storyScreenGestures(
             onPauseLongPress = onPauseLongPress,

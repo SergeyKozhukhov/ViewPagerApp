@@ -8,22 +8,22 @@ import com.example.componentsui.story.StoryScreenBorderEvent
 import com.example.componentsui.story.StoryScreenEvent
 import com.example.componentsui.story.StoryViewer
 
-private const val TAG = "StoriesScreen"
-
 // https://www.droidcon.com/2022/10/12/how-to-handle-viewmodel-one-time-events-in-jetpack-compose/
 @Composable // TODO: rename to StoryPage
 fun StoryScreen(
-    id: Int,
+    settledId: Int,
     isActive: Boolean,
     story: StoryPage,
+    screenDuration: Long,
     onScreenEvent: (event: StoryScreenEvent, screen: Int) -> Unit,
     onBorderEvent: (event: StoryScreenBorderEvent) -> Unit,
     screenContent: @Composable (StoryPage.Custom) -> Unit
 ) {
     StoryViewer(
-        id = id,
+        settledId = settledId,
         isActive = isActive,
         screenCount = story.screens.size,
+        screenDuration = screenDuration,
         onScreenEvent = onScreenEvent,
         onBorderEvent = onBorderEvent,
         screenContent = { position ->

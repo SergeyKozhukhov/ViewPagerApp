@@ -1,21 +1,30 @@
 package com.example.componentsui.story
 
 import android.util.Log
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 
 private const val TAG = "StoriesScreen"
 
 // https://www.droidcon.com/2022/10/12/how-to-handle-viewmodel-one-time-events-in-jetpack-compose/
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StoryViewer(
     id: Int,
@@ -49,15 +58,38 @@ fun StoryViewer(
         viewModel.resetPage()
     }
 
-    CurrentScreen(
-        progress = screenState.screenProgress,
-        currentSlice = screenState.currentScreenIndex,
-        screenCount = screenCount,
-        onNextScreenTap = { viewModel.onNextTap() },
-        onPreviousScreenTap = { viewModel.onPreviousTap() },
-        onPauseLongPress = { viewModel.onPause() },
-        screenContent = screenContent
-    )
+    val pagerState = rememberPagerState(initialPage = screenState.currentScreenIndex)
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(key1 = screenState.currentScreenIndex) {
+        scope.launch { pagerState.scrollToPage(screenState.currentScreenIndex) }
+    }
+
+    HorizontalPager(
+        state = pagerState,
+        pageCount = screenCount,
+        beyondBoundsPageCount = 1,
+        userScrollEnabled = false
+    ) { position ->
+        CurrentScreen(
+            currentSlice = position,
+            onNextScreenTap = { viewModel.onNextTap() },
+            onPreviousScreenTap = { viewModel.onPreviousTap() },
+            onPauseLongPress = { viewModel.onPause() },
+            screenContent = screenContent
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(color = Color.White)
+    ) {
+        ProgressBar(
+            progress = screenState.screenProgress,
+            currentScreen = screenState.currentScreenIndex,
+            screenCount = screenCount
+        )
+    }
 
     LaunchedEffect(key1 = isActive, key2 = id, key3 = screenState.currentScreenIndex) {
         if (isActive) {
@@ -70,9 +102,7 @@ fun StoryViewer(
 
 @Composable
 fun CurrentScreen(
-    progress: Float,
     currentSlice: Int,
-    screenCount: Int,
     onNextScreenTap: () -> Unit,
     onPreviousScreenTap: () -> Unit,
     onPauseLongPress: () -> Unit,
@@ -86,12 +116,6 @@ fun CurrentScreen(
         )
     ) {
         screenContent.invoke(currentSlice)
-
-        ProgressBar(
-            progress = progress,
-            currentScreen = currentSlice,
-            screenCount = screenCount
-        )
     }
 }
 

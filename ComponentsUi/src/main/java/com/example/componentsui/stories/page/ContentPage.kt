@@ -31,3 +31,8 @@ data class VideoPage(
 interface CustomPage : ContentPage
 
 //         val content: @Composable BoxScope.() -> Unit
+
+
+data class StoryPageV2<T>(
+    val screens: List<T>
+)

@@ -32,7 +32,7 @@ class ContentActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = Color.Transparent
                 ) {
-                    ContentScreen(
+                    ContentScreenV2(
                         currentId = currentId,
                         ids = ids,
                         viewFactory = viewFactory,

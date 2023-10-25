@@ -10,14 +10,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.componentsui.standard.screen.StoryImageContent
 import com.example.componentsui.stories.StoriesScreen
-import com.example.componentsui.stories.page.PageState
-import com.example.componentsui.stories.page.StoryPage
-import com.example.componentsui.stories.page.story.image.StoryImageContent
 import com.example.viewpagerapp.domain.ContentId
 import com.example.viewpagerapp.domain.content.StoryContent
-import com.example.viewpagerapp.presentation.content.stories.CustomStoriesPage
-import com.example.viewpagerapp.presentation.content.stories.CustomStoryScreen
 import com.example.viewpagerapp.presentation.content.view.ViewFactory
 
 @Composable
@@ -67,10 +63,15 @@ fun ContentStoriesScreen(
         onPageScreenShow = { pagePosition, screenPosition ->
             viewModel.onPageScreenShow(pagePosition, screenPosition)
         },
-        onError = { position, e -> viewModel.onError(position, e) },
-        loadingContent = { LoadingContent() },
-        storyScreenContent = { page -> CustomStoryScreen(page, viewFactory) },
-        pageContent = { position -> CustomPageContent(pageState = contentStates[position]) }
+        screenFactory = { screen -> CustomStoryScreen(screen, viewFactory) },
+        pageFactory = { pageState ->
+            when (pageState) {
+                ContentPageState.Idle -> Text(text = "idle")
+                ContentPageState.Loading -> LoadingContent()
+                is ContentPageState.Success -> { /* do nothing */ }
+                ContentPageState.Error -> Text("Error")
+            }
+        }
     )
 }
 
@@ -82,45 +83,28 @@ private fun LoadingContent() {
 }
 
 @Composable
-private fun CustomStoryScreen(page: StoryPage.Custom, viewFactory: ViewFactory) {
-    if (page is CustomStoryScreen) {
-        when (page.item) {
-            is StoryContent.Story -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    StoryImageContent(
-                        image = page.item.image,
-                        title = page.item.title,
-                        onPrepared = { }
-                    )
-                }
-            }
-
-            is StoryContent.Video -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    SmthView(viewFactory = viewFactory)
-                    Text(text = "video: ${page.item}")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CustomPageContent(pageState: PageState) {
-    if (pageState is PageState.Success) {
-        val content = pageState.content
-        if (content is CustomStoriesPage) {
+private fun CustomStoryScreen(page: StoryContent.Item, viewFactory: ViewFactory) {
+    when (page) {
+        is StoryContent.Story -> {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "custom page: ${content.title}")
+                StoryImageContent(
+                    image = page.image,
+                    title = page.title,
+                    onPrepared = { }
+                )
+            }
+        }
+
+        is StoryContent.Video -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                SmthView(viewFactory = viewFactory)
+                Text(text = "video: ${page}")
             }
         }
     }

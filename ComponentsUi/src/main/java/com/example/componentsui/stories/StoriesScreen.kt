@@ -23,16 +23,9 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import com.example.componentsui.stories.elements.CloseButton
-import com.example.componentsui.stories.page.ContentPage
+import com.example.componentsui.other.elements.CloseButton
 import com.example.componentsui.stories.page.PageState
-import com.example.componentsui.stories.page.StoryPage
-import com.example.componentsui.stories.page.VideoPage
-import com.example.componentsui.stories.page.defaults.DefaultErrorState
-import com.example.componentsui.stories.page.defaults.DefaultIdleState
-import com.example.componentsui.stories.page.defaults.DefaultLoadingState
 import com.example.componentsui.stories.page.story.StoryScreen
-import com.example.componentsui.stories.page.video.VideoScreen
 import com.example.componentsui.story.StoryScreenBorderEvent
 import com.example.componentsui.story.StoryScreenEvent
 import kotlinx.coroutines.launch
@@ -44,9 +37,9 @@ const val SCREEN_DURATION = 5000L // ms
 // TODO: derivedStateOf
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun StoriesScreen(
+fun <Screen, Page : PageState<Screen>> StoriesScreen(
     initialPage: Int,
-    contentStates: List<PageState>,
+    contentStates: List<Page>,
     onInitStories: (position: Int) -> Unit,
     onCurrentPageChanged: (nextPosition: Int) -> Unit,
     onSettledPageChanged: (position: Int) -> Unit,
@@ -56,12 +49,8 @@ fun StoriesScreen(
     onNextPageSwipe: (position: Int) -> Unit,
     onPreviousPageSwipe: (position: Int) -> Unit,
     onPageScreenShow: (pagePosition: Int, screenPosition: Int) -> Unit,
-    onError: (position: Int, e: Throwable) -> Unit,
-    idleContent: @Composable () -> Unit = { DefaultIdleState() },
-    loadingContent: @Composable () -> Unit = { DefaultLoadingState() },
-    storyScreenContent: @Composable (StoryPage.Custom) -> Unit,
-    pageContent: @Composable (position: Int) -> Unit,
-    errorContent: @Composable (e: Throwable) -> Unit = { DefaultErrorState(it) },
+    screenFactory: @Composable (Screen) -> Unit,
+    pageFactory: @Composable (Page) -> Unit,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 ) {
     val pagerState = rememberPagerState(initialPage = initialPage)
@@ -117,11 +106,10 @@ fun StoriesScreen(
                 .fillMaxSize()
                 .border(width = Dp(4f), color = Color.Black)
         ) {
-            when (val currentState = contentStates[currentPosition]) {
-                is PageState.Idle -> idleContent.invoke()
-                is PageState.Loading -> loadingContent.invoke()
-                is PageState.Success -> SuccessState(
-                    contentPage = currentState.content,
+            val currentStateV2 = contentStates[currentPosition]
+            if (currentStateV2.screens != null) {
+                SuccessState<Screen>(
+                    screens = currentStateV2.screens!!,
                     currentPosition = currentPosition,
                     settledPosition = pagerState.settledPage,
                     isActive = currentPosition == pagerState.settledPage && !pagerState.isScrollInProgress && isRunningTimerAllowed,
@@ -143,14 +131,10 @@ fun StoriesScreen(
                     onNextPageSwipe = onNextPageSwipe,
                     onPreviousPageSwipe = onPreviousPageSwipe,
                     onPageScreenShow = onPageScreenShow,
-                    storyScreenContent = storyScreenContent,
-                    pageContent = pageContent
+                    storyScreenContent = screenFactory,
                 )
-
-                is PageState.Error -> {
-                    onError.invoke(currentPosition, currentState.e)
-                    errorContent.invoke(currentState.e)
-                }
+            } else {
+                pageFactory.invoke(currentStateV2)
             }
             CloseButton(onClick = { onCloseClick.invoke(currentPosition) })
         }
@@ -158,8 +142,8 @@ fun StoriesScreen(
 }
 
 @Composable
-fun SuccessState(
-    contentPage: ContentPage,
+fun <Screen> SuccessState(
+    screens: List<Screen>,
     currentPosition: Int,
     settledPosition: Int,
     isActive: Boolean,
@@ -168,35 +152,20 @@ fun SuccessState(
     onNextPageSwipe: (position: Int) -> Unit,
     onPreviousPageSwipe: (position: Int) -> Unit,
     onPageScreenShow: (pagePosition: Int, screenPosition: Int) -> Unit,
-    storyScreenContent: @Composable (StoryPage.Custom) -> Unit,
-    pageContent: @Composable (position: Int) -> Unit
+    storyScreenContent: @Composable (Screen) -> Unit,
 ) {
     // TODO: to api
-    when (contentPage) {
-        is StoryPage -> {
-            StoryScreen(
-                settledId = settledPosition,
-                isActive = isActive,
-                story = contentPage,
-                screenDuration = SCREEN_DURATION,
-                onScreenEvent = { event, screen ->
-                    onScreenEvent.invoke(event, currentPosition, screen)
-                },
-                onBorderEvent = { event -> onBorderEvent.invoke(event, currentPosition) },
-                screenContent = storyScreenContent
-            )
-        }
-
-        is VideoPage -> {
-            VideoScreen(
-                videoPage = contentPage, isActive = isActive
-            )
-        }
-
-        else -> {
-            pageContent.invoke(currentPosition)
-        }
-    }
+    StoryScreen(
+        settledId = settledPosition,
+        isActive = isActive,
+        screens = screens,
+        screenDuration = SCREEN_DURATION,
+        onScreenEvent = { event, screen ->
+            onScreenEvent.invoke(event, currentPosition, screen)
+        },
+        onBorderEvent = { event -> onBorderEvent.invoke(event, currentPosition) },
+        screenContent = storyScreenContent
+    )
 }
 
 private fun createObserver(onPause: () -> Unit, onResume: () -> Unit) =

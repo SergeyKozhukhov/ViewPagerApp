@@ -1,4 +1,4 @@
-package com.example.componentsui.stories.elements
+package com.example.componentsui.other.elements
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box

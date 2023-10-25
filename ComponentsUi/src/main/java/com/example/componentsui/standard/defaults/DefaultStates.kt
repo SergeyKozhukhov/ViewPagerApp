@@ -1,4 +1,4 @@
-package com.example.componentsui.stories.page.defaults
+package com.example.componentsui.standard.defaults
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize

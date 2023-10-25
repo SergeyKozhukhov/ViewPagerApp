@@ -1,4 +1,4 @@
-package com.example.componentsui.stories.elements
+package com.example.componentsui.other.elements
 
 import android.net.Uri
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT

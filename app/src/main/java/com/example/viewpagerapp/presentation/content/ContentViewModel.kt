@@ -1,6 +1,5 @@
 package com.example.viewpagerapp.presentation.content
 
-import android.content.res.Resources
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -9,7 +8,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
-import com.example.componentsui.stories.page.PageState
 import com.example.componentsui.story.StoryScreenBorderEvent
 import com.example.componentsui.story.StoryScreenEvent
 import com.example.viewpagerapp.data.DataSource
@@ -17,6 +15,8 @@ import com.example.viewpagerapp.data.Repository
 import com.example.viewpagerapp.data.converters.ContentConverter
 import com.example.viewpagerapp.data.converters.EntryPointConverter
 import com.example.viewpagerapp.domain.ContentId
+import com.example.viewpagerapp.domain.content.StoryContent
+import com.example.viewpagerapp.domain.content.VideoContent
 import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -26,13 +26,13 @@ private const val TAG = "ContentViewModel"
 class ContentViewModel(
     private val ids: List<ContentId>,
     private val repository: Repository,
-    private val contentPageConverter: ContentPageConverter,
     private val preload: Int = 0
 ) : ViewModel() {
 
     val uiState = mutableStateOf<ContentUiState>(ContentUiState.Process)
 
-    val itemStates: SnapshotStateList<PageState> = ids.map { PageState.Idle }.toMutableStateList()
+    val itemStates: SnapshotStateList<ContentPageState<StoryContent.Item>> =
+        ids.map<ContentId, ContentPageState<StoryContent.Item>> { ContentPageState.Idle }.toMutableStateList()
 
     var prevPosition = -1
     private var isNeedPagination = true
@@ -58,54 +58,55 @@ class ContentViewModel(
 
     private suspend fun makeGroupRequest(position: Int) {
         val indexes = getGroupPositions(position = position)
+        makeRequestGroupItems(indexes)
+    }
+
+    private suspend fun makeRequestGroupItems(indexes: IntRange) {
         try {
             val requestIds = mutableListOf<ContentId>() // there are ids
             indexes.forEach { index ->
-                if (itemStates[index] == PageState.Idle) {
+                if (itemStates[index] is ContentPageState.Idle) {
                     requestIds.add(ids[index])
-                    itemStates[index] = PageState.Loading
+                    itemStates[index] = ContentPageState.Loading
                 }
             }
             val result = repository.getContent(requestIds)
             requestIds.forEach { requestId ->
                 itemStates[ids.indexOfFirst { it == requestId }] =
                     result.find { it.id == requestId.id }?.let { content ->
-                        val contentPage = contentPageConverter.convert(content)
-                        PageState.Success(contentPage)
+                        when (content) {
+                            is StoryContent -> ContentPageState.Success(content.items)
+                            is VideoContent -> ContentPageState.Error
+                        }
                     } ?: run {
-                        PageState.Error(Resources.NotFoundException())
+                        ContentPageState.Error
                     }
             }
         } catch (e: CancellationException) {
-            update(indexes, PageState.Error(e))
+            update(indexes, e)
             throw e
         } catch (e: Exception) {
-            update(indexes, PageState.Error(e))
+            update(indexes, e)
         }
     }
 
-    private fun update(indexes: IntRange, state: PageState) {
-        (indexes.first..indexes.last).forEach { index -> itemStates[index] = state }
-    }
-
-    private suspend fun makeSingleRequest(prevPos: Int, nextPos: Int) {
-        val pos = detectSinglePosition(prevPos, nextPos)
-        if (pos < 0) return
-        val currentStoryState = itemStates[pos]
-        try {
-            if (currentStoryState is PageState.Idle) {
-                itemStates[pos] = PageState.Loading
-                val result = repository.getContent(ids[pos])
-                val ans = contentPageConverter.convert(result)
-                itemStates[pos] = PageState.Success(ans)
-            }
-        } catch (e: CancellationException) {
-            itemStates[pos] = PageState.Error(e)
-            throw e
-        } catch (e: Exception) {
-            itemStates[pos] = PageState.Error(e)
+    private fun update(indexes: IntRange, e: Exception) {
+        (indexes.first..indexes.last).forEach { index ->
+            itemStates[index] = ContentPageState.Error
         }
     }
+
+    private suspend fun makeSingleRequest(prevPos: Int, current: Int) {
+        val nextPosition = detectNextPosition(prevPos, current)
+        if (nextPosition < 0) return
+        val nextStoryState = itemStates[nextPosition]
+        if (nextStoryState is ContentPageState.Idle) {
+            val max =
+                minOf(current + PAGINATION_COUNT, itemStates.size - 1) // TODO: if size is 0 or 1
+            makeRequestGroupItems(IntRange(nextPosition, max))
+        }
+    }
+
 
     private fun getGroupPositions(position: Int): IntRange {
         val preStartPosition = position - preload
@@ -118,7 +119,7 @@ class ContentViewModel(
         return IntRange(start = startPosition, endInclusive = endPosition)
     }
 
-    private fun detectSinglePosition(prevPos: Int, nextPos: Int): Int {
+    private fun detectNextPosition(prevPos: Int, nextPos: Int): Int {
         val res = if (nextPos > prevPos) nextPos + 1 else nextPos - 1
         return if (res >= 0 && res < ids.size) res else -1
     }
@@ -172,6 +173,8 @@ class ContentViewModel(
 
     companion object {
 
+        const val PAGINATION_COUNT = 3
+
         fun provide(ids: List<ContentId>) = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
@@ -187,7 +190,6 @@ class ContentViewModel(
                 return ContentViewModel(
                     ids,
                     repository,
-                    ContentPageConverter(),
                     1
                 ) as T
             }

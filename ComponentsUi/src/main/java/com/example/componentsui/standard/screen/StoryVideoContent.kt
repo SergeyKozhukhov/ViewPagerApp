@@ -1,4 +1,4 @@
-package com.example.componentsui.stories.page.story.video
+package com.example.componentsui.standard.screen
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize

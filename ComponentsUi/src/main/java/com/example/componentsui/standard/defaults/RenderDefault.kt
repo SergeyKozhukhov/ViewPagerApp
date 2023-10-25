@@ -1,4 +1,4 @@
-package com.example.componentsui.stories.page.story.custom
+package com.example.componentsui.standard.defaults
 
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable

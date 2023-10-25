@@ -1,5 +1,6 @@
 package com.example.componentsui.standard.screen
 
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,7 +39,10 @@ fun StoryImageContent(
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,
-            onSuccess = { onPrepared.invoke() },
+            onSuccess = {
+                Log.d("ContentViewModel", "StoryImageContent: $title")
+                onPrepared.invoke()
+            },
             onError = { onPrepared.invoke() }
         )
         Text(

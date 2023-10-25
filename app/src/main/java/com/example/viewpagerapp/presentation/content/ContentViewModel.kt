@@ -149,9 +149,20 @@ class ContentViewModel(
     fun onBorderEvent(event: StoryScreenBorderEvent, page: Int) {
         when (event) {
             StoryScreenBorderEvent.IDLE -> {}
-            StoryScreenBorderEvent.NEXT_SCREEN_TAP -> Log.d(TAG, "onNextPageTap: $page")
-            StoryScreenBorderEvent.PREVIOUS_SCREEN_TAP -> Log.d(TAG, "onPreviousPageTap: $page")
-            StoryScreenBorderEvent.NEXT_SCREEN_TIME -> Log.d(TAG, "onNextPageTime: $page")
+            StoryScreenBorderEvent.NEXT_SCREEN_TAP -> {
+                Log.d(TAG, "onNextPageTap: $page")
+                if (page == itemStates.size - 1) uiState.value = ContentUiState.Finish
+            }
+
+            StoryScreenBorderEvent.NEXT_SCREEN_TIME -> {
+                Log.d(TAG, "onNextPageTime: $page")
+                if (page == itemStates.size - 1) uiState.value = ContentUiState.Finish
+            }
+
+            StoryScreenBorderEvent.PREVIOUS_SCREEN_TAP -> {
+                Log.d(TAG, "onPreviousPageTap: $page")
+                if (page == 0) uiState.value = ContentUiState.Finish
+            }
         }
     }
 

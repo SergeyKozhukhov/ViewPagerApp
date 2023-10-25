@@ -104,8 +104,6 @@ fun CurrentScreen(
     onPauseLongPress: () -> Unit,
     screenContent: @Composable (screen: Int) -> Unit,
 ) {
-    val res = LocalViewConfiguration.current
-    res.longPressTimeoutMillis
     Box(
         modifier = Modifier.storyScreenGestures(
             onPauseLongPress = onPauseLongPress,

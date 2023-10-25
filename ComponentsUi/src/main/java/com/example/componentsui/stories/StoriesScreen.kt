@@ -11,6 +11,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,7 +50,7 @@ fun <Screen, Page : PageState<Screen>> StoriesScreen(
     onNextPageSwipe: (position: Int) -> Unit,
     onPreviousPageSwipe: (position: Int) -> Unit,
     onPageScreenShow: (pagePosition: Int, screenPosition: Int) -> Unit,
-    screenFactory: @Composable (Screen) -> Unit,
+    screenFactory: @Composable (Screen) -> State<Boolean>,
     pageFactory: @Composable (Page) -> Unit,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 ) {
@@ -152,7 +153,7 @@ fun <Screen> SuccessState(
     onNextPageSwipe: (position: Int) -> Unit,
     onPreviousPageSwipe: (position: Int) -> Unit,
     onPageScreenShow: (pagePosition: Int, screenPosition: Int) -> Unit,
-    storyScreenContent: @Composable (Screen) -> Unit,
+    storyScreenContent: @Composable (Screen) -> State<Boolean>,
 ) {
     // TODO: to api
     StoryScreen(

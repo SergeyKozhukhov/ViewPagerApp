@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,7 +70,9 @@ fun ContentStoriesScreen(
             when (pageState) {
                 ContentPageState.Idle -> Text(text = "idle")
                 ContentPageState.Loading -> LoadingContent()
-                is ContentPageState.Success -> { /* do nothing */ }
+                is ContentPageState.Success -> { /* do nothing */
+                }
+
                 ContentPageState.Error -> Text("Error")
             }
         }
@@ -83,7 +87,8 @@ private fun LoadingContent() {
 }
 
 @Composable
-private fun CustomStoryScreen(page: StoryContent.Item, viewFactory: ViewFactory) {
+private fun CustomStoryScreen(page: StoryContent.Item, viewFactory: ViewFactory): State<Boolean> {
+    val onReadyForPlayTimer = remember { mutableStateOf(false) }
     when (page) {
         is StoryContent.Story -> {
             Box(
@@ -93,7 +98,7 @@ private fun CustomStoryScreen(page: StoryContent.Item, viewFactory: ViewFactory)
                 StoryImageContent(
                     image = page.image,
                     title = page.title,
-                    onPrepared = { }
+                    onPrepared = { onReadyForPlayTimer.value = true }
                 )
             }
         }
@@ -108,6 +113,7 @@ private fun CustomStoryScreen(page: StoryContent.Item, viewFactory: ViewFactory)
             }
         }
     }
+    return onReadyForPlayTimer
 }
 
 @Composable

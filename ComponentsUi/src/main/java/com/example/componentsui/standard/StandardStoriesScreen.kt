@@ -2,6 +2,9 @@ package com.example.componentsui.standard
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import com.example.componentsui.standard.screen.StoryImageContent
 import com.example.componentsui.standard.screen.StoryVideoContent
 import com.example.componentsui.stories.StoriesScreen
@@ -42,14 +45,16 @@ fun StandardStoriesScreen(
 }
 
 @Composable
-private fun ScreenFactoryImpl(screen: StandardStoryPage.Screen) {
+private fun ScreenFactoryImpl(screen: StandardStoryPage.Screen): State<Boolean> {
+    val onReadyForPlayTimer = remember { mutableStateOf(false) }
     when (screen) {
         is StandardStoryPage.Image -> StoryImageContent(image = screen.image,
             title = screen.title,
-            onPrepared = {})
+            onPrepared = { onReadyForPlayTimer.value = true })
 
         is StandardStoryPage.Video -> StoryVideoContent(
             video = screen.video, title = screen.title
         )
     }
+    return onReadyForPlayTimer
 }

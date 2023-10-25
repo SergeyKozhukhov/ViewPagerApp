@@ -33,7 +33,7 @@ fun StoryImageContent(
                 .placeholder(R.drawable.ic_launcher_foreground)
                 .error(R.drawable.ic_launcher_background)
                 .diskCachePolicy(CachePolicy.DISABLED)
-                .networkCachePolicy(CachePolicy.DISABLED)
+                // .networkCachePolicy(CachePolicy.DISABLED)
                 .build(),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),

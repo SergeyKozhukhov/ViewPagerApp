@@ -3,6 +3,8 @@ package com.example.componentsui.story
 import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,8 +18,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalViewConfiguration
 import kotlinx.coroutines.launch
 
 private const val TAG = "StoriesScreen"
@@ -67,7 +70,8 @@ fun StoryViewer(
                     onBorderEvent.invoke(StoryScreenBorderEvent.PREVIOUS_SCREEN_TAP)
                 }
             },
-            onPauseLongPress = { isPaused = true },
+            onLongPressStart = { isPaused = true },
+            onLongPressEnd = { isPaused = false },
             screenContent = screenContent
         )
     }
@@ -101,37 +105,53 @@ fun CurrentScreen(
     currentSlice: Int,
     onNextScreenTap: () -> Unit,
     onPreviousScreenTap: () -> Unit,
-    onPauseLongPress: () -> Unit,
+    onLongPressStart: () -> Unit,
+    onLongPressEnd: () -> Unit,
     screenContent: @Composable (screen: Int) -> Unit,
 ) {
     Box(
         modifier = Modifier.storyScreenGestures(
-            onPauseLongPress = onPauseLongPress,
             onNextScreenTap = onNextScreenTap,
-            onPreviousScreenTap = onPreviousScreenTap
+            onPreviousScreenTap = onPreviousScreenTap,
+            onLongPressStart = onLongPressStart,
+            onLongPressEnd = onLongPressEnd
         )
     ) {
         screenContent.invoke(currentSlice)
     }
 }
 
+// https://www.bam.tech/article/detect-instagram-like-gestures-with-jetpack-compose
+// https://slack-chats.kotlinlang.org/t/1204341/any-modifier-for-hold-element-combinedclickable-have-onclick
 private fun Modifier.storyScreenGestures(
-    onPauseLongPress: () -> Unit,
     onNextScreenTap: () -> Unit,
-    onPreviousScreenTap: () -> Unit
+    onPreviousScreenTap: () -> Unit,
+    onLongPressStart: () -> Unit,
+    onLongPressEnd: () -> Unit
 ) =
-    this.pointerInput(Unit) {
+    pointerInput(Unit) {
+        val halfWidth = this.size.width / 2f
         detectTapGestures(
-            onLongPress = { offset ->
-                Log.d(TAG, "AppScreen: onLongPress $offset")
-                onPauseLongPress.invoke()
-            },
             onTap = { offset ->
                 Log.d(TAG, "AppScreen: onTap $offset")
-                if (offset.x < 500) {
+                if (offset.x < halfWidth) {
                     onPreviousScreenTap.invoke()
                 } else {
                     onNextScreenTap.invoke()
                 }
             })
+    }.pointerInput(Unit) {
+        awaitEachGesture {
+            awaitFirstDown(requireUnconsumed = false)
+            onLongPressStart()
+            println("Long press")
+            while (true) {
+                val event2 = awaitPointerEvent(PointerEventPass.Main)
+                if (event2.type == PointerEventType.Release) {
+                    println("Long press ending")
+                    onLongPressEnd()
+                    break
+                }
+            }
+        }
     }

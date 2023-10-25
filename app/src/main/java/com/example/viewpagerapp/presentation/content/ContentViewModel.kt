@@ -32,7 +32,8 @@ class ContentViewModel(
     val uiState = mutableStateOf<ContentUiState>(ContentUiState.Process)
 
     val itemStates: SnapshotStateList<ContentPageState<StoryContent.Item>> =
-        ids.map<ContentId, ContentPageState<StoryContent.Item>> { ContentPageState.Idle }.toMutableStateList()
+        ids.map<ContentId, ContentPageState<StoryContent.Item>> { ContentPageState.Idle }
+            .toMutableStateList()
 
     var prevPosition = -1
     private var isNeedPagination = true
@@ -50,18 +51,18 @@ class ContentViewModel(
     private suspend fun fetch(prevPos: Int, nextPos: Int) {
         if (isNeedPagination) {
             isNeedPagination = false
-            makeGroupRequest(nextPos)
+            fetchInitGroup(nextPos)
         } else {
-            makeSingleRequest(prevPos, nextPos)
+            fetchNextGroup(prevPos, nextPos)
         }
     }
 
-    private suspend fun makeGroupRequest(position: Int) {
+    private suspend fun fetchInitGroup(position: Int) {
         val indexes = getGroupPositions(position = position)
-        makeRequestGroupItems(indexes)
+        fetchGroup(indexes)
     }
 
-    private suspend fun makeRequestGroupItems(indexes: IntRange) {
+    private suspend fun fetchGroup(indexes: IntRange) {
         try {
             val requestIds = mutableListOf<ContentId>() // there are ids
             indexes.forEach { index ->
@@ -82,11 +83,9 @@ class ContentViewModel(
                         ContentPageState.Error
                     }
             }
-        } catch (e: CancellationException) {
-            update(indexes, e)
-            throw e
         } catch (e: Exception) {
             update(indexes, e)
+            if (e is CancellationException) throw e
         }
     }
 
@@ -96,14 +95,14 @@ class ContentViewModel(
         }
     }
 
-    private suspend fun makeSingleRequest(prevPos: Int, current: Int) {
+    private suspend fun fetchNextGroup(prevPos: Int, current: Int) {
         val nextPosition = detectNextPosition(prevPos, current)
         if (nextPosition < 0) return
         val nextStoryState = itemStates[nextPosition]
         if (nextStoryState is ContentPageState.Idle) {
             val max =
                 minOf(current + PAGINATION_COUNT, itemStates.size - 1) // TODO: if size is 0 or 1
-            makeRequestGroupItems(IntRange(nextPosition, max))
+            fetchGroup(IntRange(nextPosition, max))
         }
     }
 

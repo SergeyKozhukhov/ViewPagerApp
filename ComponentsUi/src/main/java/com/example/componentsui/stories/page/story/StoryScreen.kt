@@ -1,11 +1,6 @@
 package com.example.componentsui.stories.page.story
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import com.example.componentsui.story.StoryScreenBorderEvent
 import com.example.componentsui.story.StoryScreenEvent
 import com.example.componentsui.story.StoryViewer
@@ -19,33 +14,17 @@ fun <T> StoryScreen(
     screenDuration: Long,
     onScreenEvent: (event: StoryScreenEvent, screen: Int) -> Unit,
     onBorderEvent: (event: StoryScreenBorderEvent) -> Unit,
-    screenContent: @Composable (T) -> State<Boolean>
+    screenContent: @Composable (T, onScreenReady: () -> Unit) -> Unit
 ) {
-    var isReadyForPlayTimer by remember { mutableStateOf(false) }
-
     StoryViewer(
         settledId = settledId,
-        isActive = isActive && isReadyForPlayTimer,
+        isActive = isActive,
         screenCount = screens.size,
         screenDuration = screenDuration,
         onScreenEvent = onScreenEvent,
         onBorderEvent = onBorderEvent,
-        screenContent = { position ->
-            ContentItem(
-                screen = screens[position],
-                onPrepared = { isPrepared -> isReadyForPlayTimer = isPrepared },
-                screenContent = { customScreen -> screenContent.invoke(customScreen) }
-            )
+        screenContent = { position, onScreenReady ->
+            screenContent.invoke(screens[position], onScreenReady)
         }
     )
-}
-
-@Composable
-private fun <T> ContentItem(
-    screen: T,
-    onPrepared: (Boolean) -> Unit, // loaded
-    screenContent: @Composable (T) -> State<Boolean>,
-) {
-    val state = screenContent.invoke(screen)
-    onPrepared.invoke(state.value)
 }

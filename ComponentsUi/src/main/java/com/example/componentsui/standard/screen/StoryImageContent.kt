@@ -22,7 +22,7 @@ import com.example.componentsui.R
 fun StoryImageContent(
     image: String,
     title: String,
-    onPrepared: () -> Unit, // loaded
+    onContentLoaded: () -> Unit
 ) {
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -41,9 +41,9 @@ fun StoryImageContent(
             contentScale = ContentScale.Crop,
             onSuccess = {
                 Log.d("ContentViewModel", "StoryImageContent: $title")
-                onPrepared.invoke()
+                onContentLoaded.invoke()
             },
-            onError = { onPrepared.invoke() }
+            onError = { onContentLoaded.invoke() }
         )
         Text(
             text = title,

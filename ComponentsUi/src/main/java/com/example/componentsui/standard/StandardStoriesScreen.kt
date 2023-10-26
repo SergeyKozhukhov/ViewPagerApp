@@ -2,9 +2,6 @@ package com.example.componentsui.standard
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import com.example.componentsui.standard.screen.StoryImageContent
 import com.example.componentsui.standard.screen.StoryVideoContent
 import com.example.componentsui.stories.StoriesScreen
@@ -19,6 +16,7 @@ import com.example.componentsui.story.StoryScreenEvent
 fun StandardStoriesScreen(
     initialPage: Int,
     contentStates: List<StandardStoryPage>,
+    isActive: Boolean,
     onInitStories: (position: Int) -> Unit,
     onCurrentPageChanged: (nextPosition: Int) -> Unit,
     onSettledPageChanged: (position: Int) -> Unit,
@@ -32,6 +30,7 @@ fun StandardStoriesScreen(
     StoriesScreen(initialPage = initialPage,
         contentStates = contentStates,
         onInitStories = onInitStories,
+        isActive = isActive,
         onCurrentPageChanged = onCurrentPageChanged,
         onSettledPageChanged = onSettledPageChanged,
         onCloseClick = onCloseClick,
@@ -40,21 +39,19 @@ fun StandardStoriesScreen(
         onNextPageSwipe = onNextPageSwipe,
         onPreviousPageSwipe = onPreviousPageSwipe,
         onPageScreenShow = onPageScreenShow,
-        screenFactory = { screen -> ScreenFactoryImpl(screen = screen) },
-        pageFactory = { page -> /* do nothing */ })
+        screenFactory = { screen, onScreenReady -> ScreenFactoryImpl(screen, onScreenReady) },
+        pageFactory = { _ -> /* do nothing */ })
 }
 
 @Composable
-private fun ScreenFactoryImpl(screen: StandardStoryPage.Screen): State<Boolean> {
-    val onReadyForPlayTimer = remember { mutableStateOf(false) }
+private fun ScreenFactoryImpl(screen: StandardStoryPage.Screen, onContentLoaded: () -> Unit) {
     when (screen) {
-        is StandardStoryPage.Image -> StoryImageContent(image = screen.image,
-            title = screen.title,
-            onPrepared = { onReadyForPlayTimer.value = true })
+        is StandardStoryPage.Image -> StoryImageContent(
+            image = screen.image, title = screen.title, onContentLoaded = onContentLoaded
+        )
 
         is StandardStoryPage.Video -> StoryVideoContent(
             video = screen.video, title = screen.title
         )
     }
-    return onReadyForPlayTimer
 }

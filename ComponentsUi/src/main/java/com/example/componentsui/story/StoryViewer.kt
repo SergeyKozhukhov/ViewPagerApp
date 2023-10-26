@@ -11,11 +11,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -35,13 +37,20 @@ fun StoryViewer(
     screenDuration: Long, // ms
     onScreenEvent: (event: StoryScreenEvent, screen: Int) -> Unit,
     onBorderEvent: (event: StoryScreenBorderEvent) -> Unit,
-    screenContent: @Composable (screen: Int) -> Unit,
+    screenContent: @Composable (screen: Int, onScreenReady: () -> Unit) -> Unit,
 ) {
-
     val pagerState = rememberPagerState(initialPage = 0)
     val scope = rememberCoroutineScope()
 
-    var isPaused by remember { mutableStateOf(false) }
+    var isTimerPaused by remember { mutableStateOf(false) }
+    var isScreenContentReady by remember { mutableStateOf(false) }
+
+    var curPage by remember { mutableStateOf(0) }
+
+
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.currentPage }.collect { page -> curPage = page }
+    }
 
     HorizontalPager(
         state = pagerState,
@@ -49,8 +58,12 @@ fun StoryViewer(
         beyondBoundsPageCount = 1,
         userScrollEnabled = false
     ) { position ->
-        CurrentScreen(
-            currentSlice = position,
+        var isPrepared by remember { mutableStateOf(false) }
+        if (curPage == position) {
+            Log.d("ContentViewModel", "StoryViewer HorizontalPager: $isPrepared pos:$position")
+            isScreenContentReady = isPrepared
+        }
+        CurrentScreen(currentSlice = position,
             onNextScreenTap = {
                 if (pagerState.canScrollForward) {
                     onScreenEvent.invoke(StoryScreenEvent.NEXT_SCREEN_TAP, position)
@@ -62,18 +75,16 @@ fun StoryViewer(
             onPreviousScreenTap = {
                 if (pagerState.canScrollBackward) {
                     onScreenEvent.invoke(
-                        StoryScreenEvent.PREVIOUS_SCREEN_TAP,
-                        pagerState.settledPage
+                        StoryScreenEvent.PREVIOUS_SCREEN_TAP, pagerState.settledPage
                     )
                     scope.launch { pagerState.scrollToPage(position - 1) }
                 } else {
                     onBorderEvent.invoke(StoryScreenBorderEvent.PREVIOUS_SCREEN_TAP)
                 }
             },
-            onLongPressStart = { isPaused = true },
-            onLongPressEnd = { isPaused = false },
-            screenContent = screenContent
-        )
+            onLongPressStart = { isTimerPaused = true },
+            onLongPressEnd = { isTimerPaused = false },
+            screenContent = { pos -> screenContent.invoke(pos) { isPrepared = true } })
     }
 
     Box(
@@ -81,12 +92,11 @@ fun StoryViewer(
             .fillMaxWidth()
             .background(color = Color.White)
     ) {
-        AnimatedProgressBar(
-            id = settledId,
+        AnimatedProgressBar(id = settledId,
             screenPosition = pagerState.currentPage,
             screenCount = screenCount,
             screenDuration = screenDuration,
-            isRunning = isActive && !isPaused,
+            isRunning = isActive && !isTimerPaused && isScreenContentReady,
             onFinish = {
                 if (pagerState.canScrollForward) {
                     onScreenEvent.invoke(StoryScreenEvent.NEXT_SCREEN_TIME, pagerState.currentPage)
@@ -94,8 +104,7 @@ fun StoryViewer(
                 } else {
                     onBorderEvent.invoke(StoryScreenBorderEvent.NEXT_SCREEN_TIME)
                 }
-            }
-        )
+            })
     }
 }
 

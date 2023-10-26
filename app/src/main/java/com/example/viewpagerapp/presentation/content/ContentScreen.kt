@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,8 +49,7 @@ fun ContentStoriesScreen(
 
     val contentStates = viewModel.itemStates
 
-    StoriesScreen(
-        initialPage = initialPage,
+    StoriesScreen(initialPage = initialPage,
         contentStates = contentStates.toList(),
         onInitStories = { position -> viewModel.onInitStories(position) },
         onCurrentPageChanged = { next -> viewModel.onCurrentPageChanged(next) },
@@ -65,7 +62,13 @@ fun ContentStoriesScreen(
         onPageScreenShow = { pagePosition, screenPosition ->
             viewModel.onPageScreenShow(pagePosition, screenPosition)
         },
-        screenFactory = { screen -> CustomStoryScreen(screen, viewFactory) },
+        screenFactory = { screen, onScreenReady ->
+            CustomStoryScreen(
+                page = screen,
+                viewFactory = viewFactory,
+                onContentLoaded = onScreenReady
+            )
+        },
         pageFactory = { pageState ->
             when (pageState) {
                 ContentPageState.Idle -> Text(text = "idle")
@@ -75,8 +78,7 @@ fun ContentStoriesScreen(
 
                 ContentPageState.Error -> Text("Error")
             }
-        }
-    )
+        })
 }
 
 @Composable
@@ -87,33 +89,30 @@ private fun LoadingContent() {
 }
 
 @Composable
-private fun CustomStoryScreen(page: StoryContent.Item, viewFactory: ViewFactory): State<Boolean> {
-    val onReadyForPlayTimer = remember { mutableStateOf(false) }
-    when (page) {
-        is StoryContent.Story -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
+private fun CustomStoryScreen(
+    page: StoryContent.Item, viewFactory: ViewFactory, onContentLoaded: () -> Unit
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
+    ) {
+        when (page) {
+            is StoryContent.Story -> {
                 StoryImageContent(
-                    image = page.image,
-                    title = page.title,
-                    onPrepared = { onReadyForPlayTimer.value = true }
+                    image = page.image, title = page.title, onContentLoaded = onContentLoaded
                 )
             }
-        }
 
-        is StoryContent.Video -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                SmthView(viewFactory = viewFactory)
-                Text(text = "video: ${page}")
+            is StoryContent.Video -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
+                ) {
+                    SmthView(viewFactory = viewFactory)
+                    Text(text = "video: ${page}")
+                    onContentLoaded.invoke()
+                }
             }
         }
     }
-    return onReadyForPlayTimer
 }
 
 @Composable

@@ -11,7 +11,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,16 +30,25 @@ import com.example.componentsui.story.StoryScreenBorderEvent
 import com.example.componentsui.story.StoryScreenEvent
 import kotlinx.coroutines.launch
 
+/** Длительность просмотра одного экрана страницы Истории */
 const val SCREEN_DURATION = 5000L // ms
 
 // https://www.composables.com/components/foundation/horizontalpager
 // TODO: position - [1...], index - [0...]
 // TODO: derivedStateOf
+
+/**
+ * Базовая имплементация плеера Историй. Позволяет принимать на вход любые данные.
+ * Для запуска отображения экранов страницы Истории следует передать список.
+ *
+ * @param initialPage позцция начальной страницы [0, size - 1]
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun <Screen, Page : PageState<Screen>> StoriesScreen(
     initialPage: Int,
     contentStates: List<Page>,
+    isActive: Boolean = true,
     onInitStories: (position: Int) -> Unit,
     onCurrentPageChanged: (nextPosition: Int) -> Unit,
     onSettledPageChanged: (position: Int) -> Unit,
@@ -50,7 +58,7 @@ fun <Screen, Page : PageState<Screen>> StoriesScreen(
     onNextPageSwipe: (position: Int) -> Unit,
     onPreviousPageSwipe: (position: Int) -> Unit,
     onPageScreenShow: (pagePosition: Int, screenPosition: Int) -> Unit,
-    screenFactory: @Composable (Screen) -> State<Boolean>,
+    screenFactory: @Composable (Screen, onScreenReady: () -> Unit) -> Unit,
     pageFactory: @Composable (Page) -> Unit,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 ) {
@@ -113,7 +121,7 @@ fun <Screen, Page : PageState<Screen>> StoriesScreen(
                     screens = currentStateV2.screens!!,
                     currentPosition = currentPosition,
                     settledPosition = pagerState.settledPage,
-                    isActive = currentPosition == pagerState.settledPage && !pagerState.isScrollInProgress && isRunningTimerAllowed,
+                    isActive = isActive && currentPosition == pagerState.settledPage && !pagerState.isScrollInProgress && isRunningTimerAllowed,
                     onScreenEvent = onScreenEvent,
                     onBorderEvent = { event, page ->
                         onBorderEvent.invoke(event, page)
@@ -153,7 +161,7 @@ fun <Screen> SuccessState(
     onNextPageSwipe: (position: Int) -> Unit,
     onPreviousPageSwipe: (position: Int) -> Unit,
     onPageScreenShow: (pagePosition: Int, screenPosition: Int) -> Unit,
-    storyScreenContent: @Composable (Screen) -> State<Boolean>,
+    storyScreenContent: @Composable (Screen, onScreenReady: () -> Unit) -> Unit,
 ) {
     // TODO: to api
     StoryScreen(

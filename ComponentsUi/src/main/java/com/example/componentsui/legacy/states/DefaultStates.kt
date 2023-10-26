@@ -1,4 +1,4 @@
-package com.example.componentsui.standard.defaults
+package com.example.componentsui.legacy.states
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize

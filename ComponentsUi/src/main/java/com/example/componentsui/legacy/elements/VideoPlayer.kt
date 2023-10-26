@@ -1,4 +1,4 @@
-package com.example.componentsui.other.elements
+package com.example.componentsui.legacy.elements
 
 import android.net.Uri
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT

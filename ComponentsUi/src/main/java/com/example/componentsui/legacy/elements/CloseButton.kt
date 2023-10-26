@@ -1,4 +1,4 @@
-package com.example.componentsui.other.elements
+package com.example.componentsui.legacy.elements
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box

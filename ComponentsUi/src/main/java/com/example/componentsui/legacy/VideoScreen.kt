@@ -1,4 +1,4 @@
-package com.example.componentsui.other
+package com.example.componentsui.legacy
 
 import android.net.Uri
 import androidx.compose.foundation.layout.Box
@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.example.componentsui.other.elements.VideoPlayer
+import com.example.componentsui.legacy.elements.VideoPlayer
 
 // https://www.goodrequest.com/blog/jetpack-compose-basics-how-to-use-and-implement-the-exoplayer-library-for-video-playing
 @Composable

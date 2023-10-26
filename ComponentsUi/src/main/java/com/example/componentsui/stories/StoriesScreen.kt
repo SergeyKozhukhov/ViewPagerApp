@@ -23,7 +23,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import com.example.componentsui.other.elements.CloseButton
+import com.example.componentsui.legacy.elements.CloseButton
 import com.example.componentsui.stories.page.PageState
 import com.example.componentsui.stories.page.story.StoryScreen
 import com.example.componentsui.story.StoryScreenBorderEvent

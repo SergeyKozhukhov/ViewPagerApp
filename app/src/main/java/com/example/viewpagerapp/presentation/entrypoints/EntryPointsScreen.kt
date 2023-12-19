@@ -23,8 +23,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.example.componentsui.stories.gesturesDisabled
 import com.example.viewpagerapp.R
-import com.example.viewpagerapp.domain.ContentId
 import com.example.viewpagerapp.domain.ContentKey
 
 @Composable
@@ -55,6 +55,7 @@ fun EntryPointsScreen(
                                 uiState.entryPoints
                             )
                         },
+                        // .gesturesDisabled(true),
                     contentAlignment = Alignment.Center
                 ) {
                     AsyncImage(

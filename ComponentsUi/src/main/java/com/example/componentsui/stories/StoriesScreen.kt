@@ -114,6 +114,7 @@ fun <Screen, Page : PageState<Screen>> StoriesScreen(
                 .background(color = Color.Yellow)
                 .fillMaxSize()
                 .border(width = Dp(4f), color = Color.Black)
+                // .gesturesDisabled(true)
         ) {
             val currentStateV2 = contentStates[currentPosition]
             if (currentStateV2.screens != null) {

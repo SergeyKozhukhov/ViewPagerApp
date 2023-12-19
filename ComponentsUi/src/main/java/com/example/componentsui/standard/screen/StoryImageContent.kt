@@ -1,9 +1,11 @@
 package com.example.componentsui.standard.screen
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -50,6 +52,19 @@ fun StoryImageContent(
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
         )
+
+        val context = LocalContext.current
+        Button(onClick = {
+            Toast.makeText(context, "Click 1", Toast.LENGTH_SHORT).show()
+        }, Modifier.align(Alignment.BottomStart)) {
+            Text(text = "Click me")
+        }
+
+        Button(onClick = {
+            Toast.makeText(context, "Click 2", Toast.LENGTH_SHORT).show()
+        }, Modifier.align(Alignment.BottomEnd)) {
+            Text(text = "Click me")
+        }
     }
 }
 /*
